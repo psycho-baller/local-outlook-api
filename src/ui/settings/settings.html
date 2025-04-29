@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Outlook Email Assistant - Settings</title>
+  <link rel="stylesheet" href="../../styles/styles.css">
+  <style>
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .status-connected {
+      background-color: #4CAF50;
+    }
+    .status-disconnected {
+      background-color: #F44336;
+    }
+    .status-connecting {
+      background-color: #FFC107;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.5; }
+    }
+    .settings-section {
+      margin-bottom: 24px;
+    }
+    .log-container {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .log-entry {
+      margin: 5px 0;
+      word-wrap: break-word;
+    }
+    .log-info {
+      color: #2196F3;
+    }
+    .log-success {
+      color: #4CAF50;
+    }
+    .log-error {
+      color: #F44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Email Assistant Settings</h1>
+    
+    <div class="settings-section">
+      <h2>Server-Sent Events (SSE) Connection</h2>
+      <div class="form-group">
+        <label for="sseEndpoint">SSE Endpoint URL:</label>
+        <input type="url" id="sseEndpoint" placeholder="https://your-server.com/events">
+      </div>
+      <div class="buttons">
+        <button id="connectBtn" class="primary-button">Connect</button>
+        <button id="disconnectBtn" class="secondary-button" disabled>Disconnect</button>
+      </div>
+      <div class="status-container">
+        <p>
+          <span class="status-indicator status-disconnected" id="statusIndicator"></span>
+          Status: <span id="connectionStatus">Disconnected</span>
+        </p>
+      </div>
+    </div>
+    
+    <div class="settings-section">
+      <h2>Connection Log</h2>
+      <div class="log-container" id="logContainer"></div>
+      <div class="buttons">
+        <button id="clearLogBtn" class="secondary-button">Clear Log</button>
+      </div>
+    </div>
+    
+    <div class="settings-section">
+      <h2>Test Email</h2>
+      <p>Send a test email to verify your SSE connection is working correctly.</p>
+      <div class="form-group">
+        <label for="testEmailTo">To:</label>
+        <input type="email" id="testEmailTo" placeholder="recipient@example.com">
+      </div>
+      <div class="form-group">
+        <label for="testEmailSubject">Subject:</label>
+        <input type="text" id="testEmailSubject" placeholder="Test Email">
+      </div>
+      <div class="form-group">
+        <label for="testEmailBody">Body:</label>
+        <textarea id="testEmailBody" rows="5" placeholder="This is a test email sent from the Outlook Email Assistant."></textarea>
+      </div>
+      <div class="buttons">
+        <button id="sendTestBtn" class="primary-button" disabled>Send Test Email</button>
+      </div>
+    </div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>

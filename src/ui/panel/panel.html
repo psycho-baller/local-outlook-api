@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Outlook Email Assistant</title>
+  <link rel="stylesheet" href="../../styles/styles.css">
+  <style>
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 15px;
+    }
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      margin-right: 5px;
+    }
+    .tab.active {
+      background-color: #fff;
+      border-color: #ddd;
+      border-bottom-color: #fff;
+      margin-bottom: -1px;
+      font-weight: bold;
+    }
+    .tab:hover:not(.active) {
+      background-color: #f5f5f5;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .attendee-list {
+      margin-top: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .attendee-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .attendee-item:last-child {
+      border-bottom: none;
+    }
+    .attendee-email {
+      color: #666;
+      font-size: 0.9em;
+    }
+    .event-details {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .event-detail-item {
+      margin-bottom: 8px;
+    }
+    .event-detail-label {
+      font-weight: bold;
+    }
+    .copy-button {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    .copy-button:hover {
+      background-color: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Outlook Assistant</h1>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="email">Compose Email</div>
+      <div class="tab" data-tab="events">Event Details</div>
+    </div>
+    <div id="email-tab" class="tab-content active">
+      <div class="form-group">
+        <label for="to">To:</label>
+        <input type="email" id="to" placeholder="recipient@example.com">
+      </div>
+      <div class="form-group">
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" placeholder="Email subject">
+      </div>
+      <div class="form-group">
+        <label for="body">Body (HTML supported):</label>
+        <textarea id="body" rows="10" placeholder="Enter your email content here..."></textarea>
+      </div>
+      <div class="buttons">
+        <button id="sendBtn" class="primary-button">Send Email</button>
+        <button id="clearBtn" class="secondary-button">Clear</button>
+      </div>
+    </div>
+    
+    <div id="events-tab" class="tab-content">
+      <div class="form-group">
+        <label for="eventId">Event Title or ID:</label>
+        <input type="text" id="eventId" placeholder="Enter event title or ID">
+      </div>
+      <div class="buttons">
+        <button id="getEventBtn" class="primary-button">Get Event Details</button>
+      </div>
+      
+      <div id="event-result" style="display: none;">
+        <div class="event-details">
+          <div class="event-detail-item">
+            <span class="event-detail-label">Title:</span> 
+            <span id="event-title"></span>
+          </div>
+          <div class="event-detail-item">
+            <span class="event-detail-label">Organizer:</span> 
+            <span id="event-organizer"></span>
+          </div>
+          <div class="event-detail-item">
+            <span class="event-detail-label">Date & Time:</span> 
+            <span id="event-datetime"></span>
+          </div>
+          <div class="event-detail-item">
+            <span class="event-detail-label">Location:</span> 
+            <span id="event-location"></span>
+          </div>
+        </div>
+        
+        <h3>Accepted Attendees <span id="attendee-count">(0)</span></h3>
+        <div class="attendee-list" id="attendee-list">
+          <!-- Attendees will be added here dynamically -->
+        </div>
+        <div class="buttons" style="margin-top: 10px;">
+          <button id="copyEmailsBtn" class="secondary-button">Copy All Emails</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="status" class="status"></div>
+  </div>
+  <script src="panel.js"></script>
+</body>
+</html>

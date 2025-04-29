@@ -1,0 +1,116 @@
+/* Styles for Outlook Email Assistant */
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.container {
+  max-width: 100%;
+  padding: 20px;
+}
+
+h1 {
+  font-size: 20px;
+  color: #0078d4;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+}
+
+.primary-button {
+  background-color: #0078d4;
+  color: white;
+}
+
+.primary-button:hover {
+  background-color: #006cbe;
+}
+
+.secondary-button {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.secondary-button:hover {
+  background-color: #e0e0e0;
+}
+
+.status {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.status.success {
+  background-color: #dff6dd;
+  color: #107c10;
+}
+
+.status.error {
+  background-color: #fde7e9;
+  color: #d13438;
+}
+
+.status.pending {
+  background-color: #fff4ce;
+  color: #605e5c;
+}
+
+a {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+ul {
+  padding-left: 20px;
+}
+
+li {
+  margin-bottom: 5px;
+}

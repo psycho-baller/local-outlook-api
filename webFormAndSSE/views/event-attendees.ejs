@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    .container {
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .alert {
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .alert-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status-bar {
+      background-color: #e9ecef;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .status-connected {
+      background-color: #28a745;
+    }
+    .status-disconnected {
+      background-color: #dc3545;
+    }
+    .attendees-list {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .attendees-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .attendees-table th,
+    .attendees-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    .attendees-table th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+    .attendees-table tr:last-child td {
+      border-bottom: none;
+    }
+    .attendees-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .nav-tabs {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    .nav-tabs li {
+      margin-right: 5px;
+    }
+    .nav-tabs a {
+      display: block;
+      padding: 10px 15px;
+      text-decoration: none;
+      color: #666;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+    }
+    .nav-tabs a:hover {
+      background-color: #f5f5f5;
+    }
+    .nav-tabs a.active {
+      color: #333;
+      background-color: #fff;
+      border-color: #ddd;
+      border-bottom-color: #fff;
+      margin-bottom: -1px;
+    }
+    .copy-button {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    .copy-button:hover {
+      background-color: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><%= title %></h1>
+    
+    <ul class="nav-tabs">
+      <li><a href="/" class="<%= page === 'email' ? 'active' : '' %>">Send Email</a></li>
+      <li><a href="/event-attendees" class="<%= page === 'attendees' ? 'active' : '' %>">Event Attendees</a></li>
+    </ul>
+    
+    <div class="status-bar">
+      <span class="status-indicator <%= connected > 0 ? 'status-connected' : 'status-disconnected' %>"></span>
+      <span><%= connected %> client<%= connected !== 1 ? 's' : '' %> connected to SSE endpoint</span>
+    </div>
+    
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success">
+        <%= success %>
+      </div>
+    <% } %>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error">
+        <%= error %>
+      </div>
+    <% } %>
+    
+    <form action="/get-event-attendees" method="POST">
+      <div class="form-group">
+        <label for="eventId">Event ID or Title (partial match):</label>
+        <input 
+          type="text" 
+          id="eventId" 
+          name="eventId" 
+          placeholder="Enter event title or ID" 
+          required
+          value="<%= typeof formData !== 'undefined' && formData.eventId ? formData.eventId : '' %>"
+        >
+      </div>
+      
+      <div class="form-group">
+        <p>Enter a unique identifier or part of the event title to find the event in your Outlook calendar.</p>
+      </div>
+      
+      <button type="submit">Get Attendees</button>
+    </form>
+    
+    <% if (typeof attendees !== 'undefined' && attendees && attendees.length > 0) { %>
+      <div class="attendees-list">
+        <h2>Attendees who accepted the invitation (<%= attendees.length %>)</h2>
+        <table class="attendees-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% attendees.forEach(function(attendee) { %>
+              <tr>
+                <td><%= attendee.name %></td>
+                <td><%= attendee.email %></td>
+                <td>
+                  <button class="copy-button" onclick="copyToClipboard('<%= attendee.email %>')">Copy Email</button>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 20px;">
+          <h3>Export Options</h3>
+          <button onclick="exportToCsv()">Export to CSV</button>
+          <button onclick="copyAllEmails()">Copy All Emails</button>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <script>
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(function() {
+        alert('Email copied to clipboard: ' + text);
+      }, function(err) {
+        console.error('Could not copy text: ', err);
+      });
+    }
+    
+    function copyAllEmails() {
+      const attendees = <%- typeof attendees !== 'undefined' ? JSON.stringify(attendees) : '[]' %>;
+      const emails = attendees.map(a => a.email).filter(e => e).join(', ');
+      
+      if (emails) {
+        navigator.clipboard.writeText(emails).then(function() {
+          alert('All emails copied to clipboard!');
+        }, function(err) {
+          console.error('Could not copy emails: ', err);
+        });
+      } else {
+        alert('No valid emails to copy');
+      }
+    }
+    
+    function exportToCsv() {
+      const attendees = <%- typeof attendees !== 'undefined' ? JSON.stringify(attendees) : '[]' %>;
+      
+      if (attendees.length === 0) {
+        alert('No attendees to export');
+        return;
+      }
+      
+      // Create CSV content
+      let csvContent = 'Name,Email\n';
+      
+      attendees.forEach(function(attendee) {
+        const name = attendee.name ? `"${attendee.name.replace(/"/g, '""')}"` : '';
+        const email = attendee.email ? `"${attendee.email.replace(/"/g, '""')}"` : '';
+        csvContent += `${name},${email}\n`;
+      });
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'event_attendees.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
