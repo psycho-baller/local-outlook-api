@@ -41,5 +41,4 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Export the utility functions
-export { waitForElement, sleep };
+// No export needed - these will be available in the global scope

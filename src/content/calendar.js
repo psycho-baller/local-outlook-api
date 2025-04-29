@@ -2,7 +2,7 @@
  * Calendar functionality for Outlook Web Client
  */
 
-import { waitForElement, sleep } from './utils.js';
+// waitForElement and sleep are loaded from utils.js
 
 /**
  * Gets detailed information about a specific event including attendees
@@ -371,5 +371,4 @@ async function getEventAttendees(data) {
   }
 }
 
-// Export the calendar functionality
-export { getEventDetails, getEventAttendees };
+// No export needed - these will be available in the global scope

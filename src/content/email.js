@@ -2,7 +2,7 @@
  * Email functionality for Outlook Web Client
  */
 
-import { waitForElement, sleep } from './utils.js';
+// waitForElement and sleep are loaded from utils.js
 
 /**
  * Sends an email through Outlook Web Client
@@ -99,5 +99,4 @@ async function fillRecipient(toField, email) {
   await sleep(500);
 }
 
-// Export the email functionality
-export { sendEmail };
+// No export needed - this will be available in the global scope

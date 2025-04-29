@@ -36,7 +36,12 @@
         "https://outlook.office.com/*",
         "https://outlook.live.com/*"
       ],
-      "js": ["src/content/content.js"]
+      "js": [
+        "src/content/utils.js",
+        "src/content/email.js",
+        "src/content/calendar.js",
+        "src/content/content.js"
+      ]
     }
   ],
   "icons": {

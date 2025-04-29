@@ -125,11 +125,12 @@ outlook-email-extension/
 
 #### Modular Content Script Architecture
 1. The main content script (content.js) serves as a message router
-2. Specialized modules handle specific functionality:
+2. Specialized scripts handle specific functionality:
    - email.js: Handles all email-related operations
    - calendar.js: Manages calendar and event-related functionality
    - utils.js: Provides shared utility functions
-3. This modular approach improves maintainability and separation of concerns
+3. Scripts are loaded in the correct order via the manifest.json file
+4. This modular approach improves maintainability and separation of concerns while maintaining compatibility with Chrome Extension requirements
 
 #### Manual Email Sending
 1. The extension checks if you're on an Outlook Web Client page
@@ -165,6 +166,7 @@ outlook-email-extension/
 - The event search functionality can find events by partial title match
 - Event search automatically checks future months if the event isn't found in the current month
 - The programmatic email client requires Node.js but has minimal dependencies
+- Content scripts are organized in a modular fashion but don't use ES modules due to Chrome Extension limitations
 
 ## Programmatic Email Client
 
