@@ -60,10 +60,18 @@ graph TB
         SettingsPage[Settings Page] --> BackgroundScript
     end
     
+    %% Content Script components
+    subgraph ContentScripts [Content Scripts]
+        ContentRouter[Content Router<br>content.js] --> EmailModule[Email Module<br>email.js]
+        ContentRouter --> CalendarModule[Calendar Module<br>calendar.js]
+        EmailModule --> UtilsModule[Utils Module<br>utils.js]
+        CalendarModule --> UtilsModule
+    end
+    
     %% Outlook Web Client components
     subgraph OutlookWebClient [Outlook Web Client]
-        ContentScript[Content Script] --> EmailDOM[Email DOM Interactions]
-        ContentScript --> EventDOM[Event DOM Interactions]
+        EmailModule --> EmailDOM[Email DOM Interactions]
+        CalendarModule --> EventDOM[Event DOM Interactions]
     end
     
     %% Connections between components
@@ -71,18 +79,20 @@ graph TB
     EmailAPI <--> RequestTracker
     EventAPI <--> RequestTracker
     CallbackSender --> CallbackAPI
-    BackgroundScript --> ContentScript
+    BackgroundScript --> ContentRouter
     TabManager --> OutlookWebClient
     
     %% Styling
     classDef server fill:#f9f,stroke:#333,stroke-width:2px
     classDef extension fill:#bbf,stroke:#333,stroke-width:2px
+    classDef contentscripts fill:#ffd,stroke:#333,stroke-width:2px
     classDef client fill:#bfb,stroke:#333,stroke-width:2px
     classDef ui fill:#fbb,stroke:#333,stroke-width:2px
     
     class NodeJSServer,SSEEndpoint,EmailAPI,EventAPI,CallbackAPI,RequestTracker,EventBroadcaster server
     class ChromeExtension,BackgroundScript,SSEClient,TabManager,CallbackSender extension
-    class OutlookWebClient,ContentScript,EmailDOM,EventDOM client
+    class ContentScripts,ContentRouter,EmailModule,CalendarModule,UtilsModule contentscripts
+    class OutlookWebClient,EmailDOM,EventDOM client
     class WebFormUI,EmailClient,SidePanel,SettingsPage ui
 ```
 
@@ -170,17 +180,23 @@ graph TB
 
 - **Architecture**:
   - **Background Script**: Manages SSE connection, coordinates actions, and reports results
-  - **Content Script**: Interacts with web page DOM for emails and events
+  - **Content Scripts**:
+    - **Main Content Script (content.js)**: Acts as a message router
+    - **Email Module (email.js)**: Handles email-related DOM interactions
+    - **Calendar Module (calendar.js)**: Manages calendar and event-related functionality
+    - **Utilities Module (utils.js)**: Provides shared helper functions
   - **UI Components**: Settings page, tabbed side panel, popup
   
 - **Key Functions**:
   - SSE connection management
   - Tab management (finding/creating Outlook tabs)
-  - DOM manipulation for email automation and event retrieval
-  - Event search across multiple months
-  - Attendee and event details extraction
+  - Modular DOM manipulation for different Outlook features
+  - Email composition and sending (email.js)
+  - Event search across multiple months (calendar.js)
+  - Attendee and event details extraction (calendar.js)
   - Result reporting via callbacks
   - Error handling and retry logic
+  - Shared DOM utilities (utils.js)
 
 ### 4. Outlook Web Client
 
@@ -262,6 +278,8 @@ The system can be integrated with:
 6. **Batch Operations**: Support for processing multiple operations in a single request
 7. **User Interface Improvements**: Enhanced UI for the web form and extension panel
 8. **Configuration Management**: More flexible configuration options for the extension and server
+9. **Additional Content Script Modules**: Create more specialized modules for other Outlook features
+10. **Module Testing**: Implement unit tests for individual content script modules
 
 ---
 

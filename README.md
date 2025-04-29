@@ -97,7 +97,10 @@ outlook-email-extension/
 │   ├── background/       # Background scripts
 │   │   └── background.js # Background service worker
 │   ├── content/          # Content scripts
-│   │   └── content.js    # Content script for interacting with Outlook
+│   │   ├── content.js    # Main content script (message router)
+│   │   ├── email.js      # Email-related functionality
+│   │   ├── calendar.js   # Calendar and event-related functionality
+│   │   └── utils.js      # Shared utility functions
 │   ├── ui/               # User interface components
 │   │   ├── panel/        # Side panel components
 │   │   │   ├── panel.html# Side panel UI
@@ -120,14 +123,22 @@ outlook-email-extension/
 
 ### How It Works
 
+#### Modular Content Script Architecture
+1. The main content script (content.js) serves as a message router
+2. Specialized modules handle specific functionality:
+   - email.js: Handles all email-related operations
+   - calendar.js: Manages calendar and event-related functionality
+   - utils.js: Provides shared utility functions
+3. This modular approach improves maintainability and separation of concerns
+
 #### Manual Email Sending
 1. The extension checks if you're on an Outlook Web Client page
 2. If you are, it enables the side panel for composing emails
-3. When you submit the form, the content script interacts with the Outlook interface to create and send the email
+3. When you submit the form, the email.js module interacts with the Outlook interface to create and send the email
 
 #### Event Details Retrieval
 1. When you enter an event title/ID and click "Get Event Details"
-2. The content script searches for the event in the current month view
+2. The calendar.js module searches for the event in the current month view
 3. If not found, it checks the next two months automatically
 4. When found, it extracts event details and attendee information
 5. The results are displayed in the side panel
@@ -136,7 +147,7 @@ outlook-email-extension/
 1. The background script establishes and maintains a connection to your SSE endpoint
 2. When an event is received, it validates the data and processes the instruction
 3. It finds or creates an Outlook tab as needed
-4. The content script interacts with the Outlook interface to perform the requested action
+4. The appropriate content script module interacts with the Outlook interface to perform the requested action
 5. Results are sent back to the server via the provided callback URL
 
 #### Programmatic Email Client
