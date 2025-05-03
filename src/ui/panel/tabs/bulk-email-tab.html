@@ -1,0 +1,94 @@
+<div id="bulk-tab" class="tab-content">
+  <div class="form-group">
+    <label for="bulk-subject">Subject ({{placeholders}} supported):</label>
+    <input type="text" id="bulk-subject" placeholder="Email subject with optional {{placeholders}}">
+  </div>
+  <div class="form-group">
+    <label for="bulk-body">Body (HTML and {{placeholders}} supported):</label>
+    <div class="editor-container">
+      <div class="editor-toolbar" id="bulk-body-toolbar">
+        <select id="bulk-body-format-select">
+          <option value="p">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+        </select>
+        <button type="button" data-command="bold" title="Bold"><strong>B</strong></button>
+        <button type="button" data-command="italic" title="Italic"><em>I</em></button>
+        <button type="button" data-command="underline" title="Underline"><u>U</u></button>
+        <button type="button" data-command="foreColor" data-value="#FF0000" title="Text Color">Color</button>
+        <button type="button" data-command="insertOrderedList" title="Numbered List">1.</button>
+        <button type="button" data-command="insertUnorderedList" title="Bullet List">•</button>
+        <button type="button" data-command="createLink" title="Insert Link">Link</button>
+        <button type="button" data-command="justifyLeft" title="Align Left">Left</button>
+        <button type="button" data-command="justifyCenter" title="Align Center">Center</button>
+        <button type="button" data-command="justifyRight" title="Align Right">Right</button>
+        <button type="button" id="bulk-body-html-toggle-btn" class="html-toggle-btn"
+          title="Edit HTML directly">HTML</button>
+      </div>
+      <div id="bulk-body-editor" class="rich-editor" contenteditable="true"
+        placeholder="Enter your email content with placeholders like {{name}}, {{company}}, etc."></div>
+      <textarea id="bulk-body" style="display:none;"></textarea>
+    </div>
+    <div class="editor-toggle" style="display: none;">
+      <input type="checkbox" id="bulk-body-html-toggle">
+      <label for="bulk-body-html-toggle">Edit HTML directly</label>
+    </div>
+  </div>
+  <div class="buttons">
+    <button id="previewBtn" class="secondary-button">Preview Data</button>
+    <button id="sendBulkBtn" class="primary-button">Send Bulk Emails</button>
+    <button id="clearBulkBtn" class="secondary-button">Clear</button>
+  </div>
+  <div class="form-group">
+    <div id="preview-container" style="display: none;">
+      <h4>Recipient Data Preview</h4>
+      <div class="preview-info">
+        <span id="recipient-count">0</span> recipients found.
+        <span id="placeholder-info"></span>
+      </div>
+      <div class="select-all-container">
+        <input type="checkbox" id="select-all-checkbox" checked>
+        <label for="select-all-checkbox">Select/Deselect All</label>
+      </div>
+      <div class="preview-table-container">
+        <table id="preview-table" class="preview-table">
+          <!-- Editable table will be inserted here -->
+        </table>
+      </div>
+      <div class="table-actions">
+        <button id="addRowBtn" class="secondary-button">Add Row</button>
+        <button id="removeSelectedBtn" class="secondary-button">Remove Selected</button>
+        <button id="applyChangesBtn" class="secondary-button">Apply Changes</button>
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="bulk-recipients">Recipients Data (CSV/Tab/Semicolon separated):</label>
+    <textarea id="bulk-recipients" rows="6"
+      placeholder="Paste CSV, tab, or semicolon separated data. First row should contain headers including 'email' field."></textarea>
+    <div class="recipients-data-container" style="margin-top: 8px;">
+      <label>Data Format:</label>
+      <div class="radio-group">
+        <input type="radio" id="format-auto" name="data-format" value="auto" checked>
+        <label for="format-auto">Auto-detect</label>
+
+        <input type="radio" id="format-comma" name="data-format" value="comma">
+        <label for="format-comma">Comma (,)</label>
+
+        <input type="radio" id="format-semicolon" name="data-format" value="semicolon">
+        <label for="format-semicolon">Semicolon (;)</label>
+
+        <input type="radio" id="format-tab" name="data-format" value="tab">
+        <label for="format-tab">Tab</label>
+      </div>
+    </div>
+    <div class="data-management" style="margin-top: 15px;">
+      <div class="data-management-buttons">
+        <button id="saveDataSetBtn" class="secondary-button">Save Data Set</button>
+        <button id="manageDataSetsBtn" class="secondary-button">Manage Data Sets</button>
+      </div>
+    </div>
+  </div>
+
+</div>

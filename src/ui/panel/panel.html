@@ -33,6 +33,145 @@
     .tab-content.active {
       display: block;
     }
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+    .radio-group input[type="radio"] {
+      margin-right: 5px;
+    }
+    .preview-table-container {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-top: 10px;
+      margin-bottom: 15px;
+    }
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .preview-table th, .preview-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    .preview-table th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+    }
+    .preview-table input[type="text"] {
+      width: 100%;
+      padding: 4px;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+    }
+    .preview-table input[type="checkbox"] {
+      margin: 0;
+      vertical-align: middle;
+    }
+    .preview-table th input[type="text"] {
+      font-weight: bold;
+      background-color: #f5f5f5;
+    }
+    .table-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .table-actions button {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    .select-all-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .select-all-container input {
+      margin-right: 5px;
+    }
+    .preview-info {
+      margin-bottom: 10px;
+      color: #666;
+    }
+    .placeholder-highlight {
+      background-color: #ffeb3b;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .editor-container {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      min-height: 200px;
+      margin-bottom: 5px;
+    }
+    .rich-editor {
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: white;
+    }
+    .editor-toolbar {
+      padding: 5px;
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .editor-toolbar button {
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .editor-toolbar button:hover {
+      background-color: #e9e9e9;
+    }
+    .html-toggle-btn {
+      background-color: #f0f0f0;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .html-toggle-btn.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .editor-toolbar select {
+      height: 24px;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+    }
+    .editor-toggle {
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+    }
+    .editor-toggle input {
+      margin-right: 5px;
+    }
+    .html-mode {
+      width: 100%;
+      height: 200px;
+      font-family: monospace;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
     .attendee-list {
       margin-top: 15px;
       border: 1px solid #ddd;
@@ -82,71 +221,32 @@
 <body>
   <div class="container">
     <h1>Outlook Assistant</h1>
-    
+    <div class="container">
     <div class="tabs">
-      <div class="tab active" data-tab="email">Compose Email</div>
-      <div class="tab" data-tab="events">Event Details</div>
+      <div class="tab active" data-tab="email">Email</div>
+      <div class="tab" data-tab="events">Events</div>
+      <div class="tab" data-tab="bulk">Bulk Email</div>
     </div>
+    
+    <!-- Tab content containers - will be loaded dynamically -->
     <div id="email-tab" class="tab-content active">
-      <div class="form-group">
-        <label for="to">To:</label>
-        <input type="email" id="to" placeholder="recipient@example.com">
-      </div>
-      <div class="form-group">
-        <label for="subject">Subject:</label>
-        <input type="text" id="subject" placeholder="Email subject">
-      </div>
-      <div class="form-group">
-        <label for="body">Body (HTML supported):</label>
-        <textarea id="body" rows="10" placeholder="Enter your email content here..."></textarea>
-      </div>
-      <div class="buttons">
-        <button id="sendBtn" class="primary-button">Send Email</button>
-        <button id="clearBtn" class="secondary-button">Clear</button>
-      </div>
+      <!-- Email tab content will be loaded here -->
     </div>
     
     <div id="events-tab" class="tab-content">
-      <div class="form-group">
-        <label for="eventId">Event Title or ID:</label>
-        <input type="text" id="eventId" placeholder="Enter event title or ID">
-      </div>
-      <div class="buttons">
-        <button id="getEventBtn" class="primary-button">Get Event Details</button>
-      </div>
-      
-      <div id="event-result" style="display: none;">
-        <div class="event-details">
-          <div class="event-detail-item">
-            <span class="event-detail-label">Title:</span> 
-            <span id="event-title"></span>
-          </div>
-          <div class="event-detail-item">
-            <span class="event-detail-label">Organizer:</span> 
-            <span id="event-organizer"></span>
-          </div>
-          <div class="event-detail-item">
-            <span class="event-detail-label">Date & Time:</span> 
-            <span id="event-datetime"></span>
-          </div>
-          <div class="event-detail-item">
-            <span class="event-detail-label">Location:</span> 
-            <span id="event-location"></span>
-          </div>
-        </div>
-        
-        <h3>Accepted Attendees <span id="attendee-count">(0)</span></h3>
-        <div class="attendee-list" id="attendee-list">
-          <!-- Attendees will be added here dynamically -->
-        </div>
-        <div class="buttons" style="margin-top: 10px;">
-          <button id="copyEmailsBtn" class="secondary-button">Copy All Emails</button>
-        </div>
-      </div>
+      <!-- Events tab content will be loaded here -->
+    </div>
+    
+    <div id="bulk-tab" class="tab-content">
+      <!-- Bulk Email tab content will be loaded here -->
     </div>
     
     <div id="status" class="status"></div>
   </div>
-  <script src="panel.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/email-tab.js"></script>
+  <script src="js/events-tab.js"></script>
+  <script src="js/bulk-email-tab.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

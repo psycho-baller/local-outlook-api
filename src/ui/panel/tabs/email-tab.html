@@ -1,0 +1,44 @@
+<div id="email-tab" class="tab-content">
+  <div class="form-group">
+    <label for="to">To:</label>
+    <input type="email" id="to" placeholder="recipient@example.com">
+  </div>
+  <div class="form-group">
+    <label for="subject">Subject:</label>
+    <input type="text" id="subject" placeholder="Email subject">
+  </div>
+  <div class="form-group">
+    <label for="body">Body (HTML supported):</label>
+    <div class="editor-container">
+      <div class="editor-toolbar" id="body-toolbar">
+        <select id="body-format-select">
+          <option value="p">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+        </select>
+        <button type="button" data-command="bold" title="Bold"><strong>B</strong></button>
+        <button type="button" data-command="italic" title="Italic"><em>I</em></button>
+        <button type="button" data-command="underline" title="Underline"><u>U</u></button>
+        <button type="button" data-command="foreColor" data-value="#FF0000" title="Text Color">Color</button>
+        <button type="button" data-command="insertOrderedList" title="Numbered List">1.</button>
+        <button type="button" data-command="insertUnorderedList" title="Bullet List">•</button>
+        <button type="button" data-command="createLink" title="Insert Link">Link</button>
+        <button type="button" data-command="justifyLeft" title="Align Left">Left</button>
+        <button type="button" data-command="justifyCenter" title="Align Center">Center</button>
+        <button type="button" data-command="justifyRight" title="Align Right">Right</button>
+        <button type="button" id="body-html-toggle-btn" class="html-toggle-btn" title="Edit HTML directly">HTML</button>
+      </div>
+      <div id="body-editor" class="rich-editor" contenteditable="true" placeholder="Enter your email content here..."></div>
+      <textarea id="body" style="display:none;"></textarea>
+    </div>
+    <div class="editor-toggle" style="display: none;">
+      <input type="checkbox" id="body-html-toggle">
+      <label for="body-html-toggle">Edit HTML directly</label>
+    </div>
+  </div>
+  <div class="buttons">
+    <button id="sendBtn" class="primary-button">Send Email</button>
+    <button id="clearBtn" class="secondary-button">Clear</button>
+  </div>
+</div>

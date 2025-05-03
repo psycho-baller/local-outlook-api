@@ -1,0 +1,14 @@
+{
+  "name": "email-sender",
+  "version": "1.0.0",
+  "description": "Node application to send emails using CSV data with template placeholders via local Outlook API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "fs-extra": "^11.1.1",
+    "handlebars": "^4.7.7"
+  }
+}
