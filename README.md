@@ -8,6 +8,11 @@ This Chrome extension integrates with Outlook Web Client to send emails and retr
 - Works with Outlook Web Client (Office 365 and Outlook.com)
 - Supports HTML content in email body
 - Automatically saves draft emails and previous searches
+- Bulk email functionality with CSV/Tab/Semicolon-separated data support
+- Personalized emails with placeholder replacement
+- Data set management for storing and reusing recipient lists
+- Modular architecture with separate HTML, CSS, and JavaScript files
+- Dynamic content loading for improved maintainability
 - Server-Sent Events (SSE) integration for receiving instructions from a server
 - Callback functionality to report operation results back to the server
 - Automatic tab management (finds or creates Outlook tabs as needed)
@@ -46,6 +51,34 @@ This Chrome extension integrates with Outlook Web Client to send emails and retr
    - Event title, organizer, date/time, and location
    - List of attendees with their names and email addresses
 7. Use the "Copy All Emails" button to copy attendee emails to clipboard
+
+### Bulk Email Sending
+
+1. Navigate to [Outlook Web Client](https://outlook.office.com) or [Outlook.com](https://outlook.live.com)
+2. Click the extension icon in your Chrome toolbar
+3. Switch to the "Bulk Email" tab in the side panel
+4. Compose your email template with placeholders (e.g., `{{name}}`, `{{company}}`)
+5. Paste your recipient data in CSV, tab-delimited, or semicolon-separated format
+   - The first row should contain headers including an 'email' field
+   - Other columns can be used as placeholders in your template
+6. Select the appropriate data format or use auto-detect
+7. Click "Preview Data" to see and edit your recipient data
+   - Sort columns by clicking the column headers
+   - Add, edit, or remove recipients as needed
+   - Preview individual emails by clicking the "Preview" button
+8. Click "Send Bulk Emails" to send personalized emails to all recipients
+
+### Data Set Management
+
+1. In the "Bulk Email" tab, prepare your recipient data
+2. Click "Save Data Set" to store the current recipient list
+   - Enter a name and optional description
+   - The data set will be saved in your browser's local storage
+3. Click "Manage Data Sets" to view, load, merge, or delete saved data sets
+   - Preview: View the contents of a saved data set
+   - Load: Replace current recipient data with the selected data set
+   - Merge: Combine multiple data sets with your current recipient data
+   - Delete: Remove unwanted data sets from storage
 
 ### Server-Sent Events (SSE) Integration
 
@@ -103,8 +136,17 @@ outlook-email-extension/
 │   │   └── utils.js      # Shared utility functions
 │   ├── ui/               # User interface components
 │   │   ├── panel/        # Side panel components
-│   │   │   ├── panel.html# Side panel UI
-│   │   │   └── panel.js  # Side panel logic
+│   │   │   ├── panel.html# Main panel with tab containers
+│   │   │   ├── js/       # JavaScript modules
+│   │   │   │   ├── main.js       # Main entry point
+│   │   │   │   ├── common.js     # Shared utilities
+│   │   │   │   ├── email-tab.js  # Email tab functionality
+│   │   │   │   ├── events-tab.js # Events tab functionality
+│   │   │   │   └── bulk-email-tab.js # Bulk email functionality
+│   │   │   └── tabs/     # HTML content for each tab
+│   │   │       ├── email-tab.html   # Email tab content
+│   │   │       ├── events-tab.html  # Events tab content
+│   │   │       └── bulk-email-tab.html # Bulk email tab content
 │   │   ├── popup/        # Popup components
 │   │   │   ├── popup.html# Popup UI
 │   │   │   └── popup.js  # Popup logic

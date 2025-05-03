@@ -4,13 +4,14 @@ This document outlines the architecture and data flow of the Outlook Email Assis
 
 ## System Components
 
-The system consists of five main components:
+The system consists of six main components:
 
 1. **Web Form Interface**: A user-facing web application for composing email instructions and requesting event details
 2. **NodeJS SSE Server**: A server that broadcasts instructions to connected clients and receives operation results
 3. **Chrome Extension**: A browser extension that receives instructions, interacts with web applications, and reports results
-4. **Outlook Web Client**: The target web application where emails are composed and event details are retrieved
-5. **Programmatic Email Client**: A Node.js application for sending emails programmatically
+4. **Bulk Email Module**: A component for sending personalized emails to multiple recipients with data management
+5. **Outlook Web Client**: The target web application where emails are composed and event details are retrieved
+6. **Programmatic Email Client**: A Node.js application for sending emails programmatically
 
 ## Data Flow
 
@@ -126,6 +127,31 @@ graph TB
    - Result includes the original request ID, success/failure status, and any error messages
    - Server processes the result and updates the web interface accordingly
 
+#### Bulk Email Flow
+
+1. **Template Creation**
+   - User creates an email template with placeholders (e.g., `{{name}}`, `{{company}}`)
+   - Template includes subject and body with HTML formatting options
+
+2. **Recipient Data Import**
+   - User imports recipient data in CSV, tab-delimited, or semicolon-separated format
+   - Data is parsed and validated, with auto-detection of the delimiter
+   - First row is treated as headers, which become available as placeholders
+
+3. **Data Management**
+   - User can save recipient data sets with names and descriptions
+   - Data sets are stored in browser's local storage for future use
+   - Multiple data sets can be merged to create combined recipient lists
+
+4. **Personalization**
+   - System replaces placeholders in the template with corresponding values for each recipient
+   - Preview functionality allows users to see exactly how emails will appear
+
+5. **Sequential Sending**
+   - Emails are sent sequentially with appropriate delays to prevent rate limiting
+   - Progress is displayed to the user with success/failure status for each email
+   - Operation can be paused or canceled if needed
+
 #### Event Details Retrieval Flow
 
 1. **Event Request** (Web Form → NodeJS Server)
@@ -185,7 +211,16 @@ graph TB
     - **Email Module (email.js)**: Handles email-related DOM interactions
     - **Calendar Module (calendar.js)**: Manages calendar and event-related functionality
     - **Utilities Module (utils.js)**: Provides shared helper functions
-  - **UI Components**: Settings page, tabbed side panel, popup
+  - **UI Components**: 
+    - **Modular HTML Structure**:
+      - Main panel (panel.html) with tab containers
+      - Separate HTML files for each tab's content
+      - Dynamic loading via fetch() and chrome.runtime.getURL()
+    - **JavaScript Modules**:
+      - common.js: Shared utilities and tab switching logic
+      - Tab-specific JS files (email-tab.js, events-tab.js, bulk-email-tab.js)
+      - main.js: Initialization and coordination
+    - Settings page, popup
   
 - **Key Functions**:
   - SSE connection management

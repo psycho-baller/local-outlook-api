@@ -2,7 +2,7 @@
 
 console.log('main.js loaded');
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   console.log('DOMContentLoaded event fired');
   
   // Check if all required objects are available
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
   try {
     console.log('Attempting to initialize tab switching...');
     // Initialize tab switching and load tab content
-    const tabsLoaded = CommonUtils.initTabSwitching();
+    const tabsLoaded = await CommonUtils.initTabSwitching();
     console.log('Tab switching initialized:', tabsLoaded);
     
     if (tabsLoaded) {

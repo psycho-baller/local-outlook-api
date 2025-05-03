@@ -1,5 +1,5 @@
-<div id="bulk-tab" class="tab-content">
-  <div class="form-group">
+<!-- Bulk Email tab content -->
+<div class="form-group">
     <label for="bulk-subject">Subject ({{placeholders}} supported):</label>
     <input type="text" id="bulk-subject" placeholder="Email subject with optional {{placeholders}}">
   </div>
@@ -38,7 +38,7 @@
   <div class="buttons">
     <button id="previewBtn" class="secondary-button">Preview Data</button>
     <button id="sendBulkBtn" class="primary-button">Send Bulk Emails</button>
-    <button id="clearBulkBtn" class="secondary-button">Clear</button>
+    <button id="clearBulkBtn" class="secondary-button" title="Clear all data, email body, recipients">Clear All</button>
   </div>
   <div class="form-group">
     <div id="preview-container" style="display: none;">
@@ -90,5 +90,3 @@
       </div>
     </div>
   </div>
-
-</div>

@@ -211,181 +211,31 @@ function toggleHtmlMode(editorElement, hiddenInput, showHtml, htmlToggleBtn, sav
   }
 }
 
-// HTML templates for each tab
-const tabTemplates = {
-  email: `<div class="form-group">
-    <label for="to">To:</label>
-    <input type="email" id="to" placeholder="recipient@example.com">
-  </div>
-  <div class="form-group">
-    <label for="subject">Subject:</label>
-    <input type="text" id="subject" placeholder="Email subject">
-  </div>
-  <div class="form-group">
-    <label for="body">Body (HTML supported):</label>
-    <div class="editor-container">
-      <div class="editor-toolbar" id="body-toolbar">
-        <select id="body-format-select">
-          <option value="p">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-        </select>
-        <button type="button" data-command="bold" title="Bold"><strong>B</strong></button>
-        <button type="button" data-command="italic" title="Italic"><em>I</em></button>
-        <button type="button" data-command="underline" title="Underline"><u>U</u></button>
-        <button type="button" data-command="foreColor" data-value="#FF0000" title="Text Color">Color</button>
-        <button type="button" data-command="insertOrderedList" title="Numbered List">1.</button>
-        <button type="button" data-command="insertUnorderedList" title="Bullet List">•</button>
-        <button type="button" data-command="createLink" title="Insert Link">Link</button>
-        <button type="button" data-command="justifyLeft" title="Align Left">Left</button>
-        <button type="button" data-command="justifyCenter" title="Align Center">Center</button>
-        <button type="button" data-command="justifyRight" title="Align Right">Right</button>
-        <button type="button" id="body-html-toggle-btn" class="html-toggle-btn" title="Edit HTML directly">HTML</button>
-      </div>
-      <div id="body-editor" class="rich-editor" contenteditable="true" placeholder="Enter your email content here..."></div>
-      <textarea id="body" style="display:none;"></textarea>
-    </div>
-    <div class="editor-toggle" style="display: none;">
-      <input type="checkbox" id="body-html-toggle">
-      <label for="body-html-toggle">Edit HTML directly</label>
-    </div>
-  </div>
-  <div class="buttons">
-    <button id="sendBtn" class="primary-button">Send Email</button>
-    <button id="clearBtn" class="secondary-button">Clear</button>
-  </div>`,
+// Load HTML content from file using chrome.runtime.getURL
+async function loadTabContent(tabName) {
+  console.log(`Loading tab content for: ${tabName}`);
+  const url = chrome.runtime.getURL(`src/ui/panel/tabs/${tabName}-tab.html`);
+  console.log(`URL for tab content: ${url}`);
   
-  events: `<div class="form-group">
-    <label for="eventId">Event Title or ID:</label>
-    <input type="text" id="eventId" placeholder="Enter event title or ID">
-  </div>
-  <div class="buttons">
-    <button id="getEventBtn" class="primary-button">Get Event Details</button>
-  </div>
-  <div id="event-result" style="display: none;">
-    <h4>Event Details</h4>
-    <div class="event-details">
-      <div class="detail-row">
-        <span class="detail-label">Title:</span>
-        <span id="event-title" class="detail-value"></span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Organizer:</span>
-        <span id="event-organizer" class="detail-value"></span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Date/Time:</span>
-        <span id="event-datetime" class="detail-value"></span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Location:</span>
-        <span id="event-location" class="detail-value"></span>
-      </div>
-    </div>
-    <h4>Attendees <span id="attendee-count">(0)</span></h4>
-    <div id="attendee-list" class="attendee-list">
-      <!-- Attendees will be inserted here -->
-    </div>
-    <div class="buttons" style="margin-top: 10px;">
-      <button id="copyEmailsBtn" class="secondary-button">Copy All Emails</button>
-    </div>
-  </div>`,
-  
-  bulk: `<div class="form-group">
-    <label for="bulk-subject">Subject ({{placeholders}} supported):</label>
-    <input type="text" id="bulk-subject" placeholder="Email subject with optional {{placeholders}}">
-  </div>
-  <div class="form-group">
-    <label for="bulk-body">Body (HTML and {{placeholders}} supported):</label>
-    <div class="editor-container">
-      <div class="editor-toolbar" id="bulk-body-toolbar">
-        <select id="bulk-body-format-select">
-          <option value="p">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-        </select>
-        <button type="button" data-command="bold" title="Bold"><strong>B</strong></button>
-        <button type="button" data-command="italic" title="Italic"><em>I</em></button>
-        <button type="button" data-command="underline" title="Underline"><u>U</u></button>
-        <button type="button" data-command="foreColor" data-value="#FF0000" title="Text Color">Color</button>
-        <button type="button" data-command="insertOrderedList" title="Numbered List">1.</button>
-        <button type="button" data-command="insertUnorderedList" title="Bullet List">•</button>
-        <button type="button" data-command="createLink" title="Insert Link">Link</button>
-        <button type="button" data-command="justifyLeft" title="Align Left">Left</button>
-        <button type="button" data-command="justifyCenter" title="Align Center">Center</button>
-        <button type="button" data-command="justifyRight" title="Align Right">Right</button>
-        <button type="button" id="bulk-body-html-toggle-btn" class="html-toggle-btn" title="Edit HTML directly">HTML</button>
-      </div>
-      <div id="bulk-body-editor" class="rich-editor" contenteditable="true" placeholder="Enter your email content with placeholders like {{name}}, {{company}}, etc."></div>
-      <textarea id="bulk-body" style="display:none;"></textarea>
-    </div>
-    <div class="editor-toggle" style="display: none;">
-      <input type="checkbox" id="bulk-body-html-toggle">
-      <label for="bulk-body-html-toggle">Edit HTML directly</label>
-    </div>
-  </div>
-    <div class="buttons">
-    <button id="previewBtn" class="secondary-button">Preview Data</button>
-    <button id="sendBulkBtn" class="primary-button">Send Bulk Emails</button>
-    <button id="clearBulkBtn" class="secondary-button">Clear</button>
-  </div>
-  <div class="form-group">
-    <div id="preview-container" style="display: none;">
-      <h4>Recipient Preview</h4>
-      <div class="preview-info">
-        <span id="recipient-count">0</span> recipients found. 
-        <span id="placeholder-info"></span>
-      </div>
-      <div class="select-all-container">
-        <input type="checkbox" id="select-all-checkbox" checked>
-        <label for="select-all-checkbox">Select/Deselect All</label>
-      </div>
-      <div class="preview-table-container">
-        <table id="preview-table" class="preview-table">
-          <!-- Editable table will be inserted here -->
-        </table>
-      </div>
-      <div class="table-actions">
-        <button id="addRowBtn" class="secondary-button">Add Row</button>
-        <button id="removeSelectedBtn" class="secondary-button">Remove Selected</button>
-        <button id="applyChangesBtn" class="secondary-button">Apply Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label for="bulk-recipients">Recipients Data (CSV/Tab/Semicolon separated):</label>
-    <textarea id="bulk-recipients" rows="6" placeholder="Paste CSV, tab, or semicolon separated data. First row should contain headers including 'email' field."></textarea>
-    <div class="recipients-data-container" style="margin-top: 8px;">
-      <label>Data Format:</label>
-      <div class="radio-group">
-        <input type="radio" id="format-auto" name="data-format" value="auto" checked>
-        <label for="format-auto">Auto-detect</label>
-        
-        <input type="radio" id="format-comma" name="data-format" value="comma">
-        <label for="format-comma">Comma (,)</label>
-        
-        <input type="radio" id="format-semicolon" name="data-format" value="semicolon">
-        <label for="format-semicolon">Semicolon (;)</label>
-        
-        <input type="radio" id="format-tab" name="data-format" value="tab">
-        <label for="format-tab">Tab</label>
-      </div>
-    </div>
-    <div class="data-management" style="margin-top: 15px;">
-      <div class="data-management-buttons">
-        <button id="saveDataSetBtn" class="secondary-button">Save Data Set</button>
-        <button id="manageDataSetsBtn" class="secondary-button">Manage Data Sets</button>
-      </div>
-    </div>
-  </div>
-`
-};
+  try {
+    const response = await fetch(url);
+    console.log(`Fetch response for ${tabName}:`, response);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to load ${tabName} tab: ${response.status} ${response.statusText}`);
+    }
+    
+    const content = await response.text();
+    console.log(`Content loaded for ${tabName}, length: ${content.length} characters`);
+    return content;
+  } catch (error) {
+    console.error(`Error loading ${tabName} tab:`, error);
+    return `<div class="error">Failed to load ${tabName} tab content: ${error.message}</div>`;
+  }
+}
 
 // Initialize tab content loading and switching functionality
-function initTabSwitching() {
+async function initTabSwitching() {
   console.log('initTabSwitching called');
   
   const tabs = document.querySelectorAll('.tab');
@@ -394,9 +244,16 @@ function initTabSwitching() {
   const tabContents = document.querySelectorAll('.tab-content');
   console.log(`Found ${tabContents.length} tab content containers`);
   
+  // Show loading status
+  showStatus('Loading tab content...', 'pending');
+  
   try {
-    console.log('Setting tab content from templates');
-    // Load tab content from embedded templates
+    console.log('Loading tab content from HTML files');
+    // Load tab content from HTML files
+    const emailTabContent = await loadTabContent('email');
+    const eventsTabContent = await loadTabContent('events');
+    const bulkEmailTabContent = await loadTabContent('bulk-email');
+    
     const emailTab = document.getElementById('email-tab');
     const eventsTab = document.getElementById('events-tab');
     const bulkTab = document.getElementById('bulk-tab');
@@ -405,9 +262,26 @@ function initTabSwitching() {
     console.log('Events tab element exists:', !!eventsTab);
     console.log('Bulk tab element exists:', !!bulkTab);
     
-    if (emailTab) emailTab.innerHTML = tabTemplates.email;
-    if (eventsTab) eventsTab.innerHTML = tabTemplates.events;
-    if (bulkTab) bulkTab.innerHTML = tabTemplates.bulk;
+    if (emailTab) emailTab.innerHTML = emailTabContent;
+    if (eventsTab) eventsTab.innerHTML = eventsTabContent;
+    if (bulkTab) bulkTab.innerHTML = bulkEmailTabContent;
+    
+    // Make sure the active tab is visible
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab) {
+      const activeTabId = activeTab.getAttribute('data-tab');
+      const activeTabContent = document.getElementById(activeTabId + '-tab');
+      if (activeTabContent) {
+        console.log(`Setting active tab content: ${activeTabId}-tab`);
+        // Make sure all tab contents are hidden first
+        tabContents.forEach(c => c.style.display = 'none');
+        // Then make the active one visible
+        activeTabContent.style.display = 'block';
+      }
+    }
+    
+    // Clear loading status
+    showStatus('');
     
     // Initialize tab switching
     console.log('Setting up tab click handlers');
@@ -416,12 +290,18 @@ function initTabSwitching() {
         console.log(`Tab clicked: ${this.getAttribute('data-tab')}`);
         // Remove active class from all tabs and contents
         tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
+        tabContents.forEach(c => {
+          c.classList.remove('active');
+          c.style.display = 'none';
+        });
         
         // Add active class to clicked tab and corresponding content
         const tabId = this.getAttribute('data-tab');
         this.classList.add('active');
-        document.getElementById(tabId + '-tab').classList.add('active');
+        const activeContent = document.getElementById(tabId + '-tab');
+        activeContent.classList.add('active');
+        activeContent.style.display = 'block';
+        console.log(`Activated tab: ${tabId}, display:`, activeContent.style.display);
         
         // Clear status when switching tabs
         showStatus('');
