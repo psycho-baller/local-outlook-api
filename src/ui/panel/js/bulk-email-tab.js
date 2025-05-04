@@ -15,7 +15,6 @@ function initBulkEmailTab() {
   const recipientCountSpan = document.getElementById('recipient-count');
   const placeholderInfoSpan = document.getElementById('placeholder-info');
   const formatRadios = document.querySelectorAll('input[name="data-format"]');
-  const selectAllCheckbox = document.getElementById('select-all-checkbox');
   const addRowBtn = document.getElementById('addRowBtn');
   const removeSelectedBtn = document.getElementById('removeSelectedBtn');
   const applyChangesBtn = document.getElementById('applyChangesBtn');
@@ -27,6 +26,17 @@ function initBulkEmailTab() {
     headers: [],
     records: []
   };
+  
+  // Store the original records for filtering
+  let originalRecords = [];
+  
+  // Store current filters
+  let currentFilters = {};
+  
+  // Store active filter element to restore focus
+  let activeFilterElement = null;
+  let activeFilterHeader = null;
+  let activeFilterValue = '';
   
   // Load any saved bulk email data
   chrome.storage.local.get([
@@ -91,6 +101,12 @@ function initBulkEmailTab() {
     
     // Store the parsed data for editing
     tableData = parsedData;
+    
+    // Store original records for filtering
+    originalRecords = [...parsedData.records];
+    
+    // Reset filters
+    currentFilters = {};
     
     // Check if email field exists
     const emailField = tableData.headers.find(header => 
@@ -166,29 +182,89 @@ function initBulkEmailTab() {
     renderEditableTable();
   }
   
+  // Simple debounce function
+  function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+      const context = this;
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+  }
+  
+  // Apply filters to the records - debounced version
+  const debouncedApplyFilters = debounce(function() {
+    // Start with all original records
+    let filteredRecords = [...originalRecords];
+    
+    // Apply each filter
+    Object.keys(currentFilters).forEach(header => {
+      const filterValue = currentFilters[header].toLowerCase();
+      if (filterValue) {
+        filteredRecords = filteredRecords.filter(record => {
+          const cellValue = String(record[header] || '').toLowerCase();
+          return cellValue.includes(filterValue);
+        });
+      }
+    });
+    
+    // Update tableData with filtered records
+    tableData.records = filteredRecords;
+    
+    // Re-render the table while preserving filter focus
+    renderEditableTable(true);
+  }, 250); // 250ms debounce time
+  
+  // Apply filters to the records
+  function applyFilters() {
+    debouncedApplyFilters();
+  }
+
   // Render the editable table with the current data
-  function renderEditableTable() {
+  function renderEditableTable(skipFilterUpdate = false) {
     // Clear the table
     previewTable.innerHTML = '';
     
     // Create header row
     const headerRow = document.createElement('tr');
     
-    // Add checkbox column header
+    // Add checkbox column header with Select/Deselect All checkbox
     const checkboxHeader = document.createElement('th');
     checkboxHeader.style.width = '30px';
-    checkboxHeader.textContent = '';
+    
+    // Create the Select/Deselect All checkbox
+    const selectAllCheckbox = document.createElement('input');
+    selectAllCheckbox.type = 'checkbox';
+    selectAllCheckbox.id = 'select-all-checkbox';
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.title = 'Select/Deselect All';
+    
+    // Add event listener to the checkbox
+    selectAllCheckbox.addEventListener('change', function() {
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+      });
+    });
+    
+    checkboxHeader.appendChild(selectAllCheckbox);
     headerRow.appendChild(checkboxHeader);
     
     // Add editable headers with sort functionality
     tableData.headers.forEach((header, index) => {
       const th = document.createElement('th');
       
-      // Create header container to hold input and sort indicator
+      // Create header container for name, sort indicator, and filter
       const headerContainer = document.createElement('div');
       headerContainer.className = 'header-container';
       headerContainer.style.display = 'flex';
-      headerContainer.style.alignItems = 'center';
+      headerContainer.style.flexDirection = 'column';
+      
+      // Create top row with header name and sort indicator
+      const headerTopRow = document.createElement('div');
+      headerTopRow.style.display = 'flex';
+      headerTopRow.style.alignItems = 'center';
+      headerTopRow.style.marginBottom = '5px';
       
       // Create input for header name
       const input = document.createElement('input');
@@ -200,56 +276,142 @@ function initBulkEmailTab() {
       input.addEventListener('change', function() {
         // Store the old header name before updating it
         const oldHeader = tableData.headers[index];
-        const newHeader = this.value;
+        const newHeader = this.value.trim();
         
-        // Update the header in the array
-        tableData.headers[index] = newHeader;
-        
-        // Update all records to use the new header name
-        if (oldHeader !== newHeader) {
+        if (newHeader && newHeader !== oldHeader) {
+          // Update the header in the tableData
+          tableData.headers[index] = newHeader;
+          
+          // Update the property name in all records
           tableData.records.forEach(record => {
-            // Only transfer the value if the old header exists in the record
-            if (record.hasOwnProperty(oldHeader)) {
-              // Copy value to new header name
-              record[newHeader] = record[oldHeader];
-              // Remove old header property if different
-              if (oldHeader !== newHeader) {
-                delete record[oldHeader];
-              }
-            }
+            record[newHeader] = record[oldHeader];
+            delete record[oldHeader];
           });
+          
+          // Update original records too
+          originalRecords.forEach(record => {
+            record[newHeader] = record[oldHeader];
+            delete record[oldHeader];
+          });
+          
+          // Update filter key if it exists
+          if (currentFilters[oldHeader]) {
+            currentFilters[newHeader] = currentFilters[oldHeader];
+            delete currentFilters[oldHeader];
+          }
+          
+          CommonUtils.showStatus(`Column renamed from "${oldHeader}" to "${newHeader}"`, 'success');
+        } else if (!newHeader) {
+          // Reset to old header if empty
+          this.value = oldHeader;
+          CommonUtils.showStatus('Header name cannot be empty', 'error');
         }
       });
       
       // Create sort indicator
       const sortIndicator = document.createElement('span');
       sortIndicator.className = 'sort-indicator';
-      sortIndicator.style.marginLeft = '5px';
+      sortIndicator.innerHTML = '&#8597;'; // Up/down arrow
       sortIndicator.style.cursor = 'pointer';
-      sortIndicator.style.userSelect = 'none';
+      sortIndicator.style.marginLeft = '5px';
+      sortIndicator.title = 'Sort by this column';
       
-      // Set sort indicator text based on current sort state
-      if (currentSort.column === index) {
-        sortIndicator.textContent = currentSort.direction === 'asc' ? '^' : 'v';
-        sortIndicator.style.color = '#0078d4';
-      } else {
-        sortIndicator.textContent = '^v';
-        sortIndicator.style.color = '#666';
-      }
-      
-      // Add click handler for sorting
+      // Add click event for sorting
       sortIndicator.addEventListener('click', function() {
         sortTableData(index);
       });
       
-      // Add elements to container
-      headerContainer.appendChild(input);
-      headerContainer.appendChild(sortIndicator);
+      // If this is the current sort column, update the indicator
+      if (currentSort.column === index) {
+        sortIndicator.innerHTML = currentSort.direction === 'asc' ? '&#8593;' : '&#8595;';
+      }
+      
+      headerTopRow.appendChild(input);
+      headerTopRow.appendChild(sortIndicator);
+      
+      // Create filter input
+      const filterInput = document.createElement('input');
+      filterInput.type = 'text';
+      filterInput.placeholder = 'Filter...';
+      filterInput.className = 'filter-input';
+      filterInput.dataset.header = header;
+      filterInput.style.width = '100%';
+      filterInput.style.boxSizing = 'border-box';
+      filterInput.style.padding = '2px 5px';
+      filterInput.style.fontSize = '12px';
+      
+      // Set value from current filters or active filter
+      if (activeFilterHeader === header && activeFilterValue) {
+        filterInput.value = activeFilterValue;
+      } else if (!skipFilterUpdate && currentFilters[header]) {
+        filterInput.value = currentFilters[header];
+      }
+      
+      // Add event listener for focus to track active filter
+      filterInput.addEventListener('focus', function() {
+        activeFilterElement = this;
+        activeFilterHeader = header;
+      });
+      
+      // Add event listener for filtering
+      filterInput.addEventListener('input', function(e) {
+        const filterValue = this.value.trim();
+        activeFilterValue = this.value; // Store the current value
+        
+        if (filterValue) {
+          currentFilters[header] = filterValue;
+        } else {
+          delete currentFilters[header];
+        }
+        
+        // Store the selection/cursor position
+        const selectionStart = this.selectionStart;
+        const selectionEnd = this.selectionEnd;
+        
+        applyFilters();
+        
+        // Focus will be restored after render via the activeFilterElement reference
+      });
+      
+      headerContainer.appendChild(headerTopRow);
+      headerContainer.appendChild(filterInput);
       th.appendChild(headerContainer);
       headerRow.appendChild(th);
     });
     
+    // Add preview column header
+    const previewHeader = document.createElement('th');
+    previewHeader.textContent = 'Preview';
+    previewHeader.style.width = '80px';
+    headerRow.appendChild(previewHeader);
+    
+    // Add header row to table
     previewTable.appendChild(headerRow);
+    
+    // Update recipient count
+    recipientCountSpan.textContent = tableData.records.length;
+    
+    // Restore focus to active filter input if there was one
+    if (activeFilterHeader) {
+      // Find the filter input for the active header
+      setTimeout(() => {
+        const filterInputs = document.querySelectorAll('.filter-input');
+        filterInputs.forEach(input => {
+          if (input.dataset.header === activeFilterHeader) {
+            input.focus();
+            // Try to restore cursor position if possible
+            try {
+              input.setSelectionRange(
+                activeFilterValue.length,
+                activeFilterValue.length
+              );
+            } catch (e) {
+              // Ignore any errors with selection range
+            }
+          }
+        });
+      }, 0);  // Use setTimeout to ensure DOM is fully updated
+    }
     
     // Create data rows
     tableData.records.forEach((record, rowIndex) => {
@@ -298,13 +460,7 @@ function initBulkEmailTab() {
     });
   }
   
-  // Select/deselect all checkboxes
-  selectAllCheckbox.addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.row-checkbox');
-    checkboxes.forEach(checkbox => {
-      checkbox.checked = selectAllCheckbox.checked;
-    });
-  });
+  // Note: Select/deselect all functionality is now handled by the checkbox in the table header
   
   // Add a new row
   addRowBtn.addEventListener('click', function() {
@@ -729,509 +885,26 @@ function initBulkEmailTab() {
     previewModal.style.display = 'block';
   }
   
-  // Save Data Set button click handler
-  saveDataSetBtn.addEventListener('click', function() {
-    saveRecipientDataSet();
-  });
-  
-  // Manage Data Sets button click handler
-  manageDataSetsBtn.addEventListener('click', function() {
-    showDataSetsManager();
-  });
-  
-  // Save current recipient data set with name and description
-  function saveRecipientDataSet() {
-    // Create modal for saving data set
-    let saveModal = document.getElementById('save-dataset-modal');
-    if (!saveModal) {
-      saveModal = document.createElement('div');
-      saveModal.id = 'save-dataset-modal';
-      saveModal.className = 'modal';
-      saveModal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <span class="close-modal">&times;</span>
-            <h3>Save Recipient Data Set</h3>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="dataset-name">Name:</label>
-              <input type="text" id="dataset-name" placeholder="Enter a name for this data set">
-            </div>
-            <div class="form-group">
-              <label for="dataset-description">Description (optional):</label>
-              <textarea id="dataset-description" rows="3" placeholder="Enter a description for this data set"></textarea>
-            </div>
-            <div class="buttons">
-              <button id="confirm-save-dataset" class="primary-button">Save</button>
-              <button id="cancel-save-dataset" class="secondary-button">Cancel</button>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(saveModal);
-      
-      // Add event listeners
-      const closeButton = saveModal.querySelector('.close-modal');
-      const confirmButton = saveModal.querySelector('#confirm-save-dataset');
-      const cancelButton = saveModal.querySelector('#cancel-save-dataset');
-      
-      closeButton.addEventListener('click', function() {
-        saveModal.style.display = 'none';
-      });
-      
-      cancelButton.addEventListener('click', function() {
-        saveModal.style.display = 'none';
-      });
-      
-      confirmButton.addEventListener('click', function() {
-        const nameInput = document.getElementById('dataset-name');
-        const descriptionInput = document.getElementById('dataset-description');
-        
-        const name = nameInput.value.trim();
-        const description = descriptionInput.value.trim();
-        
-        if (!name) {
-          CommonUtils.showStatus('Please enter a name for the data set', 'error');
-          return;
-        }
-        
-        // Get current data
-        let currentData = '';
-        if (tableData.records.length > 0) {
-          // Use the parsed data if available
-          currentData = convertTableDataToCsv(tableData);
-        } else {
-          // Otherwise use the raw input
-          currentData = bulkRecipientsInput.value.trim();
-        }
-        
-        if (!currentData) {
-          CommonUtils.showStatus('No recipient data to save', 'error');
-          return;
-        }
-        
-        // Get selected format
-        let selectedFormat = 'auto';
-        formatRadios.forEach(radio => {
-          if (radio.checked) {
-            selectedFormat = radio.value;
-          }
-        });
-        
-        // Create data set object
-        const dataSet = {
-          id: Date.now().toString(),
-          name: name,
-          description: description,
-          format: selectedFormat,
-          data: currentData,
-          recordCount: tableData.records.length,
-          dateCreated: new Date().toISOString()
-        };
-        
-        // Save to storage
-        chrome.storage.local.get(['recipientDataSets'], function(result) {
-          const dataSets = result.recipientDataSets || [];
-          dataSets.push(dataSet);
-          
-          chrome.storage.local.set({ recipientDataSets: dataSets }, function() {
-            CommonUtils.showStatus(`Data set "${name}" saved successfully`, 'success');
-            saveModal.style.display = 'none';
-            nameInput.value = '';
-            descriptionInput.value = '';
-          });
-        });
-      });
-      
-      // Close when clicking outside the modal
-      window.addEventListener('click', function(event) {
-        if (event.target === saveModal) {
-          saveModal.style.display = 'none';
-        }
-      });
-    }
-    
-    // Show the modal
-    saveModal.style.display = 'block';
-  }
-  
-  // Convert table data to CSV format
-  function convertTableDataToCsv(data) {
-    if (!data.headers || !data.records || data.headers.length === 0) {
-      return '';
-    }
-    
-    // Create header row
-    const csvRows = [data.headers.join(',')];
-    
-    // Add data rows
-    data.records.forEach(record => {
-      const rowValues = data.headers.map(header => {
-        // Escape commas and quotes in values
-        const value = record[header] || '';
-        if (value.includes(',') || value.includes('"')) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return value;
-      });
-      csvRows.push(rowValues.join(','));
-    });
-    
-    return csvRows.join('\n');
-  }
-  
-  // Show data sets manager modal
-  function showDataSetsManager() {
-    // Create modal for managing data sets
-    let manageModal = document.getElementById('manage-datasets-modal');
-    if (!manageModal) {
-      manageModal = document.createElement('div');
-      manageModal.id = 'manage-datasets-modal';
-      manageModal.className = 'modal';
-      manageModal.innerHTML = `
-        <div class="modal-content" style="width: 90%; max-width: 800px;">
-          <div class="modal-header">
-            <span class="close-modal">&times;</span>
-            <h3>Manage Recipient Data Sets</h3>
-          </div>
-          <div class="modal-body">
-            <div id="datasets-list-container" style="max-height: 400px; overflow-y: auto;">
-              <table id="datasets-table" class="datasets-table" style="width: 100%;">
-                <thead>
-                  <tr>
-                    <th style="width: 30px;"><input type="checkbox" id="select-all-datasets"></th>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Records</th>
-                    <th>Date Created</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="datasets-list">
-                  <!-- Data sets will be listed here -->
-                </tbody>
-              </table>
-            </div>
-            <div class="no-datasets" id="no-datasets-message" style="display: none; text-align: center; padding: 20px;">
-              No saved data sets found.
-            </div>
-            <div class="buttons" style="margin-top: 20px;">
-              <button id="merge-selected-datasets" class="primary-button">Merge Selected</button>
-              <button id="delete-selected-datasets" class="secondary-button">Delete Selected</button>
-              <button id="close-datasets-manager" class="secondary-button">Close</button>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(manageModal);
-      
-      // Add event listeners
-      const closeButton = manageModal.querySelector('.close-modal');
-      const closeManagerButton = manageModal.querySelector('#close-datasets-manager');
-      const mergeButton = manageModal.querySelector('#merge-selected-datasets');
-      const deleteButton = manageModal.querySelector('#delete-selected-datasets');
-      const selectAllCheckbox = manageModal.querySelector('#select-all-datasets');
-      
-      closeButton.addEventListener('click', function() {
-        manageModal.style.display = 'none';
-      });
-      
-      closeManagerButton.addEventListener('click', function() {
-        manageModal.style.display = 'none';
-      });
-      
-      selectAllCheckbox.addEventListener('change', function() {
-        const checkboxes = manageModal.querySelectorAll('.dataset-checkbox');
-        checkboxes.forEach(checkbox => {
-          checkbox.checked = selectAllCheckbox.checked;
-        });
-      });
-      
-      mergeButton.addEventListener('click', function() {
-        mergeSelectedDataSets();
-      });
-      
-      deleteButton.addEventListener('click', function() {
-        deleteSelectedDataSets();
-      });
-      
-      // Close when clicking outside the modal
-      window.addEventListener('click', function(event) {
-        if (event.target === manageModal) {
-          manageModal.style.display = 'none';
-        }
-      });
-    }
-    
-    // Load and display data sets
-    loadDataSets();
-    
-    // Show the modal
-    manageModal.style.display = 'block';
-  }
-  
-  // Load data sets from storage and display them
-  function loadDataSets() {
-    const datasetsList = document.getElementById('datasets-list');
-    const noDataSetsMessage = document.getElementById('no-datasets-message');
-    
-    chrome.storage.local.get(['recipientDataSets'], function(result) {
-      const dataSets = result.recipientDataSets || [];
-      
-      if (dataSets.length === 0) {
-        datasetsList.innerHTML = '';
-        noDataSetsMessage.style.display = 'block';
-        return;
-      }
-      
-      noDataSetsMessage.style.display = 'none';
-      
-      // Sort data sets by date (newest first)
-      dataSets.sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
-      
-      // Generate HTML for each data set
-      datasetsList.innerHTML = dataSets.map((dataSet, index) => {
-        const date = new Date(dataSet.dateCreated);
-        const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-        
-        return `
-          <tr data-id="${dataSet.id}">
-            <td><input type="checkbox" class="dataset-checkbox" data-id="${dataSet.id}"></td>
-            <td>${dataSet.name}</td>
-            <td>${dataSet.description || '-'}</td>
-            <td>${dataSet.recordCount || 'Unknown'}</td>
-            <td>${formattedDate}</td>
-            <td>
-              <button class="preview-dataset-btn" data-id="${dataSet.id}">Preview</button>
-              <button class="load-dataset-btn" data-id="${dataSet.id}">Load</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      // Add event listeners to buttons
-      const previewButtons = document.querySelectorAll('.preview-dataset-btn');
-      const loadButtons = document.querySelectorAll('.load-dataset-btn');
-      
-      previewButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          const dataSetId = this.getAttribute('data-id');
-          previewDataSet(dataSetId, dataSets);
-        });
-      });
-      
-      loadButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          const dataSetId = this.getAttribute('data-id');
-          loadDataSet(dataSetId, dataSets);
-        });
-      });
-    });
-  }
-  
-  // Preview a data set
-  function previewDataSet(dataSetId, dataSets) {
-    const dataSet = dataSets.find(ds => ds.id === dataSetId);
-    if (!dataSet) return;
-    
-    // Create modal for preview
-    let previewModal = document.getElementById('preview-dataset-modal');
-    if (!previewModal) {
-      previewModal = document.createElement('div');
-      previewModal.id = 'preview-dataset-modal';
-      previewModal.className = 'modal';
-      previewModal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <span class="close-modal">&times;</span>
-            <h3>Data Set Preview</h3>
-          </div>
-          <div class="modal-body">
-            <div class="dataset-info">
-              <p><strong>Name:</strong> <span id="preview-dataset-name"></span></p>
-              <p><strong>Description:</strong> <span id="preview-dataset-description"></span></p>
-              <p><strong>Records:</strong> <span id="preview-dataset-records"></span></p>
-              <p><strong>Date Created:</strong> <span id="preview-dataset-date"></span></p>
-            </div>
-            <div class="form-group">
-              <label>Data Preview:</label>
-              <textarea id="preview-dataset-data" rows="10" readonly style="font-family: monospace;"></textarea>
-            </div>
-            <div class="buttons">
-              <button id="close-preview-dataset" class="secondary-button">Close</button>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(previewModal);
-      
-      // Add event listeners
-      const closeButton = previewModal.querySelector('.close-modal');
-      const closePreviewButton = previewModal.querySelector('#close-preview-dataset');
-      
-      closeButton.addEventListener('click', function() {
-        previewModal.style.display = 'none';
-      });
-      
-      closePreviewButton.addEventListener('click', function() {
-        previewModal.style.display = 'none';
-      });
-      
-      // Close when clicking outside the modal
-      window.addEventListener('click', function(event) {
-        if (event.target === previewModal) {
-          previewModal.style.display = 'none';
-        }
-      });
-    }
-    
-    // Update preview content
-    const nameElement = document.getElementById('preview-dataset-name');
-    const descriptionElement = document.getElementById('preview-dataset-description');
-    const recordsElement = document.getElementById('preview-dataset-records');
-    const dateElement = document.getElementById('preview-dataset-date');
-    const dataElement = document.getElementById('preview-dataset-data');
-    
-    nameElement.textContent = dataSet.name;
-    descriptionElement.textContent = dataSet.description || '-';
-    recordsElement.textContent = dataSet.recordCount || 'Unknown';
-    
-    const date = new Date(dataSet.dateCreated);
-    dateElement.textContent = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-    
-    // Show first 20 lines of data
-    const dataLines = dataSet.data.split('\n');
-    const previewLines = dataLines.slice(0, 20);
-    if (dataLines.length > 20) {
-      previewLines.push('... (more data not shown) ...');
-    }
-    dataElement.value = previewLines.join('\n');
-    
-    // Show the modal
-    previewModal.style.display = 'block';
-  }
-  
-  // Load a data set
-  function loadDataSet(dataSetId, dataSets) {
-    const dataSet = dataSets.find(ds => ds.id === dataSetId);
-    if (!dataSet) return;
-    
-    if (confirm(`Load data set "${dataSet.name}"? This will replace your current recipient data.`)) {
-      // Set the data format
+  // Initialize the Data Sets Manager
+  window.DataSetsManager.init({
+    saveDataSetBtn: saveDataSetBtn,
+    manageDataSetsBtn: manageDataSetsBtn,
+    getTableData: function() { return tableData; },
+    getRecipientData: function() { return bulkRecipientsInput.value; },
+    getSelectedFormat: function() {
+      let selectedFormat = 'auto';
       formatRadios.forEach(radio => {
-        radio.checked = radio.value === dataSet.format;
-      });
-      
-      // Set the recipient data
-      bulkRecipientsInput.value = dataSet.data;
-      
-      // Parse and preview the data
-      previewBtn.click();
-      
-      // Close the modal
-      const manageModal = document.getElementById('manage-datasets-modal');
-      if (manageModal) {
-        manageModal.style.display = 'none';
-      }
-      
-      CommonUtils.showStatus(`Data set "${dataSet.name}" loaded successfully`, 'success');
-    }
-  }
-  
-  // Merge selected data sets
-  function mergeSelectedDataSets() {
-    const checkboxes = document.querySelectorAll('.dataset-checkbox:checked');
-    if (checkboxes.length === 0) {
-      CommonUtils.showStatus('Please select at least one data set to merge', 'error');
-      return;
-    }
-    
-    const selectedIds = Array.from(checkboxes).map(checkbox => checkbox.getAttribute('data-id'));
-    
-    chrome.storage.local.get(['recipientDataSets'], function(result) {
-      const dataSets = result.recipientDataSets || [];
-      const selectedDataSets = dataSets.filter(ds => selectedIds.includes(ds.id));
-      
-      if (selectedDataSets.length === 0) return;
-      
-      // Confirm merge
-      if (confirm(`Merge ${selectedDataSets.length} selected data sets with your current data?`)) {
-        // Parse each data set
-        const allRecords = [];
-        let headers = new Set();
-        
-        // First, collect all unique headers
-        selectedDataSets.forEach(dataSet => {
-          const parsedData = parseData(dataSet.data, dataSet.format);
-          parsedData.headers.forEach(header => headers.add(header));
-        });
-        
-        // Also include current data headers if available
-        if (tableData.headers && tableData.headers.length > 0) {
-          tableData.headers.forEach(header => headers.add(header));
-          // Add current records to the merged set
-          allRecords.push(...tableData.records);
+        if (radio.checked) {
+          selectedFormat = radio.value;
         }
-        
-        headers = Array.from(headers);
-        
-        // Then, collect all records with the unified headers
-        selectedDataSets.forEach(dataSet => {
-          const parsedData = parseData(dataSet.data, dataSet.format);
-          parsedData.records.forEach(record => {
-            allRecords.push(record);
-          });
-        });
-        
-        // Create merged table data
-        const mergedData = {
-          headers: headers,
-          records: allRecords
-        };
-        
-        // Update the UI
-        tableData = mergedData;
-        bulkRecipientsInput.value = convertTableDataToCsv(mergedData);
-        
-        // Preview the merged data
-        previewBtn.click();
-        
-        // Close the modal
-        const manageModal = document.getElementById('manage-datasets-modal');
-        if (manageModal) {
-          manageModal.style.display = 'none';
-        }
-        
-        CommonUtils.showStatus(`Merged ${selectedDataSets.length} data sets successfully`, 'success');
-      }
-    });
-  }
-  
-  // Delete selected data sets
-  function deleteSelectedDataSets() {
-    const checkboxes = document.querySelectorAll('.dataset-checkbox:checked');
-    if (checkboxes.length === 0) {
-      CommonUtils.showStatus('Please select at least one data set to delete', 'error');
-      return;
-    }
-    
-    const selectedIds = Array.from(checkboxes).map(checkbox => checkbox.getAttribute('data-id'));
-    
-    if (confirm(`Delete ${selectedIds.length} selected data sets? This cannot be undone.`)) {
-      chrome.storage.local.get(['recipientDataSets'], function(result) {
-        const dataSets = result.recipientDataSets || [];
-        const updatedDataSets = dataSets.filter(ds => !selectedIds.includes(ds.id));
-        
-        chrome.storage.local.set({ recipientDataSets: updatedDataSets }, function() {
-          // Reload the data sets list
-          loadDataSets();
-          
-          CommonUtils.showStatus(`Deleted ${selectedIds.length} data sets successfully`, 'success');
-        });
       });
-    }
-  }
+      return selectedFormat;
+    },
+    parseData: parseData,
+    previewEmail: showEmailPreview
+  });
+  
+  // The Data Sets Manager functionality has been moved to data-sets-manager.js
   
 }
 

@@ -217,6 +217,74 @@
     .copy-button:hover {
       background-color: #5a6268;
     }
+    
+    /* Sortable table styles */
+    .sortable {
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+    }
+    
+    .sortable:hover {
+      background-color: #e9e9e9;
+    }
+    
+    .sort-icon {
+      font-size: 12px;
+      margin-left: 5px;
+      display: inline-block;
+    }
+    
+    .sort-asc .sort-icon::after {
+      content: "\2191";
+      font-size: 14px;
+    }
+    
+    .sort-desc .sort-icon::after {
+      content: "\2193";
+      font-size: 14px;
+    }
+    
+    .datasets-table th {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      background-color: #f5f5f5;
+    }
+    
+    .datasets-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    /* Filter input styles */
+    .filter-input {
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      background-color: #f9f9f9;
+      transition: border-color 0.2s;
+    }
+    
+    .filter-input:focus {
+      border-color: #0078d4;
+      outline: none;
+      box-shadow: 0 0 3px rgba(0, 120, 212, 0.3);
+    }
+    
+    .filter-input::placeholder {
+      color: #999;
+      font-style: italic;
+    }
+    
+    .header-container {
+      margin-bottom: 5px;
+    }
+    
+    /* Highlight filtered rows */
+    tr.filtered-match td {
+      background-color: #f0f7ff;
+    }
   </style>
 </head>
 <body>
@@ -224,13 +292,13 @@
     <h1>Outlook Assistant</h1>
     <div class="container">
     <div class="tabs">
-      <div class="tab active" data-tab="email">Email</div>
+      <div class="tab active" data-tab="bulk">Bulk Email</div>
+      <div class="tab" data-tab="email">Email</div>
       <div class="tab" data-tab="events">Events</div>
-      <div class="tab" data-tab="bulk">Bulk Email</div>
     </div>
     
     <!-- Tab content containers - will be loaded dynamically -->
-    <div id="email-tab" class="tab-content active">
+    <div id="email-tab" class="tab-content ">
       <!-- Email tab content will be loaded here -->
     </div>
     
@@ -238,7 +306,7 @@
       <!-- Events tab content will be loaded here -->
     </div>
     
-    <div id="bulk-tab" class="tab-content">
+    <div id="bulk-tab" class="tab-content active">
       <!-- Bulk Email tab content will be loaded here -->
     </div>
     
@@ -247,6 +315,7 @@
   <script src="js/common.js"></script>
   <script src="js/email-tab.js"></script>
   <script src="js/events-tab.js"></script>
+  <script src="js/data-sets-manager.js"></script>
   <script src="js/bulk-email-tab.js"></script>
   <script src="js/main.js"></script>
 </body>
