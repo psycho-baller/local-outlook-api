@@ -62,23 +62,27 @@ function initEmailTab() {
     CommonUtils.showStatus('Preparing to send email...', 'pending');
     
     // First check if current tab is Outlook
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    sendEmail(to, subject, body);
+  });
+  
+  function sendEmail(to, subject, body) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       const currentTab = tabs[0];
-      const isOutlook = currentTab && currentTab.url && 
-                       (currentTab.url.includes('outlook.office.com') || 
-                        currentTab.url.includes('outlook.live.com'));
-      
+      const isOutlook = currentTab && currentTab.url &&
+        (currentTab.url.includes('outlook.office.com') ||
+          currentTab.url.includes('outlook.live.com'));
+
       if (isOutlook) {
         // Current tab is Outlook, send directly
         sendEmailToTab(currentTab.id, { to, subject, body });
       } else {
         // Current tab is not Outlook, try to find or create an Outlook tab
-        chrome.runtime.sendMessage({ action: 'activateOutlookTab' }, function(result) {
+        chrome.runtime.sendMessage({ action: 'activateOutlookTab' }, function (result) {
           if (result && result.success) {
             // Give the tab time to load if it's new
             const delay = result.existing ? 500 : 3000;
             CommonUtils.showStatus(`${result.existing ? 'Switching to' : 'Opening'} Outlook tab...`, 'pending');
-            
+
             setTimeout(() => {
               sendEmailToTab(result.tabId, { to, subject, body });
             }, delay);
@@ -88,8 +92,8 @@ function initEmailTab() {
         });
       }
     });
-  });
-  
+  }
+
   // Function to send email to a specific tab
   function sendEmailToTab(tabId, data) {
     CommonUtils.showStatus('Sending email...', 'pending');

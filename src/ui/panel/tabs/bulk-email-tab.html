@@ -148,9 +148,16 @@
         No saved data sets found.
       </div>
       <div class="buttons" style="margin-top: 20px;">
-        <button id="merge-selected-datasets" class="primary-button">Merge Selected</button>
-        <button id="delete-selected-datasets" class="secondary-button">Delete Selected</button>
-        <button id="close-datasets-manager" class="secondary-button">Close</button>
+        <div class="operation-buttons" style="margin-bottom: 10px;">
+          <span style="margin-right: 10px;">Operations:</span>
+          <button id="merge-selected-datasets" class="primary-button" title="Union - Combine all records from selected data sets">Union</button>
+          <button id="intersect-selected-datasets" class="primary-button" title="Intersection - Keep only records that exist in all selected data sets (matching by email)">Intersection</button>
+          <button id="subtract-selected-datasets" class="primary-button" title="Subtraction - Remove records in the second data set from the first (matching by email)">Subtraction</button>
+        </div>
+        <div>
+          <button id="delete-selected-datasets" class="secondary-button">Delete Selected</button>
+          <button id="close-datasets-manager" class="secondary-button">Close</button>
+        </div>
       </div>
     </div>
   </div>

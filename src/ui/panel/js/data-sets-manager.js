@@ -255,6 +255,8 @@ class DataSetsManager {
     const closeButton = manageModal.querySelector('.close-modal');
     const closeManagerButton = document.getElementById('close-datasets-manager');
     const mergeButton = document.getElementById('merge-selected-datasets');
+    const intersectButton = document.getElementById('intersect-selected-datasets');
+    const subtractButton = document.getElementById('subtract-selected-datasets');
     const deleteButton = document.getElementById('delete-selected-datasets');
     const selectAllCheckbox = document.getElementById('select-all-datasets');
     const sortableHeaders = manageModal.querySelectorAll('.sortable');
@@ -283,6 +285,18 @@ class DataSetsManager {
     if (mergeButton) {
       mergeButton.addEventListener('click', () => {
         this.mergeSelectedDataSets();
+      });
+    }
+    
+    if (intersectButton) {
+      intersectButton.addEventListener('click', () => {
+        this.intersectSelectedDataSets();
+      });
+    }
+    
+    if (subtractButton) {
+      subtractButton.addEventListener('click', () => {
+        this.subtractSelectedDataSets();
       });
     }
     
@@ -602,78 +616,308 @@ class DataSetsManager {
   }
 
   /**
-   * Merge selected data sets
+   * Find the email field in headers
+   * @param {Array} headers - Array of header names
+   * @returns {string|null} - The email field name or null if not found
+   * @private
    */
-  mergeSelectedDataSets() {
+  _findEmailField(headers) {
+    return headers.find(header => 
+      ['email', 'emailaddress', 'e-mail', 'mail'].includes(header.toLowerCase())
+    ) || null;
+  }
+
+  /**
+   * Process data sets and prepare for operation
+   * @param {string} operation - The operation type ('union', 'intersection', 'subtraction')
+   * @private
+   */
+  _processSelectedDataSets(operation) {
     const checkboxes = document.querySelectorAll('.dataset-checkbox:checked');
     if (checkboxes.length === 0) {
-      this.commonUtils.showStatus('Please select at least one data set to merge', 'error');
-      return;
+      this.commonUtils.showStatus(`Please select at least one data set for ${operation}`, 'error');
+      return null;
+    }
+    
+    // For subtraction, we need exactly two data sets
+    if (operation === 'subtraction' && checkboxes.length !== 2) {
+      this.commonUtils.showStatus('Please select exactly two data sets for subtraction', 'error');
+      return null;
+    }
+    
+    // For intersection, we need at least two data sets
+    if (operation === 'intersection' && checkboxes.length < 2) {
+      this.commonUtils.showStatus('Please select at least two data sets for intersection', 'error');
+      return null;
     }
     
     const selectedIds = Array.from(checkboxes).map(checkbox => checkbox.getAttribute('data-id'));
     
-    chrome.storage.local.get(['recipientDataSets'], (result) => {
-      const dataSets = result.recipientDataSets || [];
-      const selectedDataSets = dataSets.filter(ds => selectedIds.includes(ds.id));
-      
-      if (selectedDataSets.length === 0) return;
-      
-      // Confirm merge
-      if (confirm(`Merge ${selectedDataSets.length} selected data sets with your current data?`)) {
-        // Parse each data set
-        const allRecords = [];
-        let headers = new Set();
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['recipientDataSets'], (result) => {
+        const dataSets = result.recipientDataSets || [];
+        const selectedDataSets = dataSets.filter(ds => selectedIds.includes(ds.id));
+        
+        if (selectedDataSets.length === 0) {
+          resolve(null);
+          return;
+        }
         
         // Get current table data
         const tableData = this.options.getTableData();
         
-        // First, collect all unique headers
-        selectedDataSets.forEach(dataSet => {
-          const parsedData = this.options.parseData(dataSet.data, dataSet.format);
-          parsedData.headers.forEach(header => headers.add(header));
+        // Parse all data sets
+        const parsedDataSets = selectedDataSets.map(dataSet => {
+          return {
+            id: dataSet.id,
+            name: dataSet.name,
+            format: dataSet.format,
+            parsedData: this.options.parseData(dataSet.data, dataSet.format)
+          };
+        });
+        
+        // Collect all unique headers
+        let headers = new Set();
+        parsedDataSets.forEach(ds => {
+          ds.parsedData.headers.forEach(header => headers.add(header));
         });
         
         // Also include current data headers if available
         if (tableData.headers && tableData.headers.length > 0) {
           tableData.headers.forEach(header => headers.add(header));
-          // Add current records to the merged set
-          allRecords.push(...tableData.records);
         }
         
         headers = Array.from(headers);
         
-        // Then, collect all records with the unified headers
-        selectedDataSets.forEach(dataSet => {
-          const parsedData = this.options.parseData(dataSet.data, dataSet.format);
-          parsedData.records.forEach(record => {
-            allRecords.push(record);
-          });
-        });
-        
-        // Create merged table data
-        const mergedData = {
-          headers: headers,
-          records: allRecords
-        };
-        
-        // Update the UI
-        const bulkRecipientsInput = document.getElementById('bulk-recipients');
-        bulkRecipientsInput.value = this.convertTableDataToCsv(mergedData);
-        
-        // Preview the merged data
-        const previewBtn = document.getElementById('previewBtn');
-        previewBtn.click();
-        
-        // Close the modal
-        const manageModal = document.getElementById('manage-datasets-modal');
-        if (manageModal) {
-          manageModal.style.display = 'none';
+        // Find email field in headers
+        const emailField = this._findEmailField(headers);
+        if (!emailField && (operation === 'intersection' || operation === 'subtraction')) {
+          this.commonUtils.showStatus(`No email field found. ${operation} operation requires an email field.`, 'error');
+          resolve(null);
+          return;
         }
         
-        this.commonUtils.showStatus(`Merged ${selectedDataSets.length} data sets successfully`, 'success');
-      }
+        resolve({
+          selectedDataSets,
+          parsedDataSets,
+          headers,
+          emailField,
+          tableData
+        });
+      });
     });
+  }
+
+  /**
+   * Merge selected data sets (Union operation)
+   */
+  async mergeSelectedDataSets() {
+    const data = await this._processSelectedDataSets('union');
+    if (!data) return;
+    
+    const { selectedDataSets, parsedDataSets, headers, tableData } = data;
+    
+    // Confirm operation
+    if (confirm(`Merge (union) ${selectedDataSets.length} selected data sets with your current data?`)) {
+      // Collect all records
+      const allRecords = [];
+      
+      // Add current records if available
+      if (tableData.headers && tableData.headers.length > 0) {
+        allRecords.push(...tableData.records);
+      }
+      
+      // Add all records from selected data sets
+      parsedDataSets.forEach(ds => {
+        allRecords.push(...ds.parsedData.records);
+      });
+      
+      // Create merged table data
+      const mergedData = {
+        headers: headers,
+        records: allRecords
+      };
+      
+      // Update the UI
+      const bulkRecipientsInput = document.getElementById('bulk-recipients');
+      bulkRecipientsInput.value = this.convertTableDataToCsv(mergedData);
+      
+      // Preview the merged data
+      const previewBtn = document.getElementById('previewBtn');
+      previewBtn.click();
+      
+      // Close the modal
+      const manageModal = document.getElementById('manage-datasets-modal');
+      if (manageModal) {
+        manageModal.style.display = 'none';
+      }
+      
+      this.commonUtils.showStatus(`Union of ${selectedDataSets.length} data sets completed successfully`, 'success');
+    }
+  }
+  
+  /**
+   * Intersect selected data sets (keep only records that exist in all data sets, matching by email)
+   */
+  async intersectSelectedDataSets() {
+    const data = await this._processSelectedDataSets('intersection');
+    if (!data) return;
+    
+    const { selectedDataSets, parsedDataSets, headers, emailField, tableData } = data;
+    
+    // Confirm operation
+    if (confirm(`Find intersection of ${selectedDataSets.length} selected data sets? This will keep only records with matching emails across all data sets.`)) {
+      // Create email-to-record maps for each data set
+      const dataSetsEmailMaps = parsedDataSets.map(ds => {
+        const emailMap = new Map();
+        ds.parsedData.records.forEach(record => {
+          const email = record[emailField]?.toLowerCase();
+          if (email) {
+            emailMap.set(email, record);
+          }
+        });
+        return emailMap;
+      });
+      
+      // Also include current data if available
+      let currentDataEmailMap = new Map();
+      if (tableData.headers && tableData.headers.length > 0) {
+        tableData.records.forEach(record => {
+          const email = record[emailField]?.toLowerCase();
+          if (email) {
+            currentDataEmailMap.set(email, record);
+          }
+        });
+        // Add current data email map to the list
+        dataSetsEmailMaps.push(currentDataEmailMap);
+      }
+      
+      // Find emails that exist in all data sets
+      let commonEmails = null;
+      
+      dataSetsEmailMaps.forEach(emailMap => {
+        const emails = Array.from(emailMap.keys());
+        if (commonEmails === null) {
+          commonEmails = new Set(emails);
+        } else {
+          commonEmails = new Set(emails.filter(email => commonEmails.has(email)));
+        }
+      });
+      
+      // Create records for intersection
+      const intersectionRecords = [];
+      
+      if (commonEmails && commonEmails.size > 0) {
+        // Use the first data set as the base for record data
+        const baseEmailMap = dataSetsEmailMaps[0];
+        
+        // Create a merged record for each common email
+        commonEmails.forEach(email => {
+          const mergedRecord = {};
+          
+          // Start with the record from the first data set
+          const baseRecord = baseEmailMap.get(email);
+          Object.assign(mergedRecord, baseRecord);
+          
+          // Merge in data from other data sets (if fields don't already exist)
+          for (let i = 1; i < dataSetsEmailMaps.length; i++) {
+            const otherRecord = dataSetsEmailMaps[i].get(email);
+            if (otherRecord) {
+              Object.keys(otherRecord).forEach(key => {
+                if (mergedRecord[key] === undefined || mergedRecord[key] === '') {
+                  mergedRecord[key] = otherRecord[key];
+                }
+              });
+            }
+          }
+          
+          intersectionRecords.push(mergedRecord);
+        });
+      }
+      
+      // Create intersection table data
+      const intersectionData = {
+        headers: headers,
+        records: intersectionRecords
+      };
+      
+      // Update the UI
+      const bulkRecipientsInput = document.getElementById('bulk-recipients');
+      bulkRecipientsInput.value = this.convertTableDataToCsv(intersectionData);
+      
+      // Preview the intersection data
+      const previewBtn = document.getElementById('previewBtn');
+      previewBtn.click();
+      
+      // Close the modal
+      const manageModal = document.getElementById('manage-datasets-modal');
+      if (manageModal) {
+        manageModal.style.display = 'none';
+      }
+      
+      this.commonUtils.showStatus(`Intersection found ${intersectionRecords.length} common records across ${selectedDataSets.length} data sets`, 'success');
+    }
+  }
+  
+  /**
+   * Subtract second data set from first data set (remove records from first that exist in second, matching by email)
+   */
+  async subtractSelectedDataSets() {
+    const data = await this._processSelectedDataSets('subtraction');
+    if (!data) return;
+    
+    const { selectedDataSets, parsedDataSets, headers, emailField, tableData } = data;
+    
+    // For subtraction, we need exactly two data sets
+    if (parsedDataSets.length !== 2) {
+      this.commonUtils.showStatus('Please select exactly two data sets for subtraction', 'error');
+      return;
+    }
+    
+    // Confirm operation
+    if (confirm(`Subtract records from "${selectedDataSets[1].name}" from "${selectedDataSets[0].name}"? This will remove records with matching emails.`)) {
+      // Create email-to-record maps for both data sets
+      const firstDataSet = parsedDataSets[0];
+      const secondDataSet = parsedDataSets[1];
+      
+      // Get emails from second data set
+      const secondDataSetEmails = new Set();
+      secondDataSet.parsedData.records.forEach(record => {
+        const email = record[emailField]?.toLowerCase();
+        if (email) {
+          secondDataSetEmails.add(email);
+        }
+      });
+      
+      // Filter records from first data set that don't exist in second data set
+      const resultRecords = firstDataSet.parsedData.records.filter(record => {
+        const email = record[emailField]?.toLowerCase();
+        return !email || !secondDataSetEmails.has(email);
+      });
+      
+      // Create subtraction table data
+      const subtractionData = {
+        headers: headers,
+        records: resultRecords
+      };
+      
+      // Update the UI
+      const bulkRecipientsInput = document.getElementById('bulk-recipients');
+      bulkRecipientsInput.value = this.convertTableDataToCsv(subtractionData);
+      
+      // Preview the subtraction data
+      const previewBtn = document.getElementById('previewBtn');
+      previewBtn.click();
+      
+      // Close the modal
+      const manageModal = document.getElementById('manage-datasets-modal');
+      if (manageModal) {
+        manageModal.style.display = 'none';
+      }
+      
+      const removedCount = firstDataSet.parsedData.records.length - resultRecords.length;
+      this.commonUtils.showStatus(`Subtraction completed: ${removedCount} records removed, ${resultRecords.length} records remaining`, 'success');
+    }
   }
 
   /**

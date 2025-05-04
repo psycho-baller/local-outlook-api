@@ -626,23 +626,27 @@ function initBulkEmailTab() {
     }
     
     // First check if current tab is Outlook
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    prepareBulkMail( selectedRecords, emailField, subject, body);
+  });
+
+  function prepareBulkMail(selectedRecords, emailField, subject, body) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       const currentTab = tabs[0];
-      const isOutlook = currentTab && currentTab.url && 
-                     (currentTab.url.includes('outlook.office.com') || 
-                      currentTab.url.includes('outlook.live.com'));
-      
+      const isOutlook = currentTab && currentTab.url &&
+        (currentTab.url.includes('outlook.office.com') ||
+          currentTab.url.includes('outlook.live.com'));
+  
       if (isOutlook) {
         // Current tab is Outlook, send directly
         processBulkEmails(currentTab.id, selectedRecords, emailField, subject, body);
       } else {
         // Current tab is not Outlook, try to find or create an Outlook tab
-        chrome.runtime.sendMessage({ action: 'activateOutlookTab' }, function(result) {
+        chrome.runtime.sendMessage({ action: 'activateOutlookTab' }, function (result) {
           if (result && result.success) {
             // Give the tab time to load if it's new
             const delay = result.existing ? 500 : 3000;
             CommonUtils.showStatus(`${result.existing ? 'Switching to' : 'Opening'} Outlook tab...`, 'pending');
-            
+  
             setTimeout(() => {
               processBulkEmails(result.tabId, selectedRecords, emailField, subject, body);
             }, delay);
@@ -652,7 +656,7 @@ function initBulkEmailTab() {
         });
       }
     });
-  });
+  }
   
   // Process and send bulk emails
   function processBulkEmails(tabId, records, emailField, subjectTemplate, bodyTemplate) {
@@ -912,3 +916,5 @@ function initBulkEmailTab() {
 window.BulkEmailTab = {
   init: initBulkEmailTab
 };
+
+
