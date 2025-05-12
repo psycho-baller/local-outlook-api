@@ -11,6 +11,7 @@ This Chrome extension integrates with Outlook Web Client to send emails and retr
 - Bulk email functionality with CSV/Tab/Semicolon-separated data support
 - Personalized emails with placeholder replacement
 - Data set management for storing and reusing recipient lists
+- Email template management for saving and reusing email content
 - Modular architecture with separate HTML, CSS, and JavaScript files
 - Dynamic content loading for improved maintainability
 - Server-Sent Events (SSE) integration for receiving instructions from a server
@@ -80,6 +81,18 @@ This Chrome extension integrates with Outlook Web Client to send emails and retr
    - Merge: Combine multiple data sets with your current recipient data
    - Delete: Remove unwanted data sets from storage
 
+### Email Template Management
+
+1. In the "Bulk Email" tab, compose your email with subject and body content
+2. Click "Save Template" to store the current email content
+   - Enter a name for the template
+   - The template will be saved in your browser's local storage with the current date
+3. Click "Load Template" to view, preview, or apply saved templates
+   - Browse: View a list of all saved templates sorted by name, subject, or date
+   - Preview: View the full content of a template before applying it
+   - Apply: Use the selected template for your current email composition
+   - Delete: Remove unwanted templates from storage
+
 ### Server-Sent Events (SSE) Integration
 
 1. Open the extension settings (right-click the extension icon → Options)
@@ -142,6 +155,8 @@ outlook-email-extension/
 │   │   │   │   ├── common.js     # Shared utilities
 │   │   │   │   ├── email-tab.js  # Email tab functionality
 │   │   │   │   ├── events-tab.js # Events tab functionality
+│   │   │   │   ├── data-sets-manager.js # Recipient data set management
+│   │   │   │   ├── email-templates-manager.js # Email template management
 │   │   │   │   └── bulk-email-tab.js # Bulk email functionality
 │   │   │   └── tabs/     # HTML content for each tab
 │   │   │       ├── email-tab.html   # Email tab content

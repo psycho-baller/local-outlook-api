@@ -1,7 +1,13 @@
 <!-- Bulk Email tab content -->
 <div class="form-group">
     <label for="bulk-subject">Subject ({{placeholders}} supported):</label>
-    <input type="text" id="bulk-subject" placeholder="Email subject with optional {{placeholders}}">
+    <div class="subject-container" style="display: flex; align-items: center;">
+      <input type="text" id="bulk-subject" placeholder="Email subject with optional {{placeholders}}" style="flex: 1;">
+      <div class="template-buttons" style="margin-left: 10px;">
+        <button id="saveTemplateBtn" class="secondary-button" title="Save as template">Save Template</button>
+        <button id="loadTemplateBtn" class="secondary-button" title="Load template">Load Template</button>
+      </div>
+    </div>
   </div>
   <div class="form-group">
     <label for="bulk-body">Body (HTML and {{placeholders}} supported):</label>
@@ -158,6 +164,96 @@
           <button id="delete-selected-datasets" class="secondary-button">Delete Selected</button>
           <button id="close-datasets-manager" class="secondary-button">Close</button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Email Templates Modal -->
+<div id="email-templates-modal" class="modal" style="display: none;">
+  <div class="modal-content" style="width: 90%; max-width: 800px;">
+    <div class="modal-header">
+      <span class="close-modal">&times;</span>
+      <h3>Email Templates</h3>
+    </div>
+    <div class="modal-body">
+      <div id="templates-list-container" style="max-height: 400px; overflow-y: auto;">
+        <table id="templates-table" class="datasets-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th style="width: 30px;"><input type="checkbox" id="select-all-templates"></th>
+              <th class="sortable" data-sort="name">Name <span class="sort-icon">&#8597;</span></th>
+              <th class="sortable" data-sort="subject">Subject <span class="sort-icon">&#8597;</span></th>
+              <th class="sortable" data-sort="dateCreated" data-sort-default="desc">Date Created <span class="sort-icon">&#8597;</span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="templates-list">
+            <!-- Templates will be listed here -->
+          </tbody>
+        </table>
+      </div>
+      <div class="no-templates" id="no-templates-message" style="display: none; text-align: center; padding: 20px;">
+        No saved email templates found.
+      </div>
+      <div class="buttons" style="margin-top: 20px;">
+        <button id="delete-selected-templates" class="secondary-button">Delete Selected</button>
+        <button id="close-templates-manager" class="secondary-button">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Save Template Modal -->
+<div id="save-template-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="close-modal">&times;</span>
+      <h3>Save Email Template</h3>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="template-select">Save as existing template (optional):</label>
+        <select id="template-select">
+          <option value="">-- Create new template --</option>
+          <!-- Existing templates will be loaded here -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="template-name">Name:</label>
+        <input type="text" id="template-name" placeholder="Enter a name for this template">
+      </div>
+      <div class="buttons">
+        <button id="confirm-save-template" class="primary-button">Save</button>
+        <button id="cancel-save-template" class="secondary-button">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Template Modal -->
+<div id="preview-template-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="close-modal">&times;</span>
+      <h3>Template Preview</h3>
+    </div>
+    <div class="modal-body">
+      <div class="template-info">
+        <p><strong>Name:</strong> <span id="preview-template-name"></span></p>
+        <p><strong>Date Created:</strong> <span id="preview-template-date"></span></p>
+      </div>
+      <div class="form-group">
+        <label>Subject:</label>
+        <input type="text" id="preview-template-subject" readonly>
+      </div>
+      <div class="form-group">
+        <label>Body:</label>
+        <div id="preview-template-body" class="email-body-preview" style="border: 1px solid #ccc; padding: 10px; min-height: 200px; overflow: auto;"></div>
+      </div>
+      <div class="buttons">
+        <button id="apply-template" class="primary-button">Apply Template</button>
+        <button id="close-preview-template" class="secondary-button">Close</button>
       </div>
     </div>
   </div>

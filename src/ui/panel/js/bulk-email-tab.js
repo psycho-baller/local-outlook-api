@@ -2,7 +2,7 @@
 
 // Initialize the bulk email tab
 function initBulkEmailTab() {
-  // Bulk Email tab elements
+  // Initialize the bulk email tab
   const bulkSubjectInput = document.getElementById('bulk-subject');
   const bulkBodyInput = document.getElementById('bulk-body');
   const bulkBodyEditor = document.getElementById('bulk-body-editor');
@@ -20,6 +20,8 @@ function initBulkEmailTab() {
   const applyChangesBtn = document.getElementById('applyChangesBtn');
   const saveDataSetBtn = document.getElementById('saveDataSetBtn');
   const manageDataSetsBtn = document.getElementById('manageDataSetsBtn');
+  const saveTemplateBtn = document.getElementById('saveTemplateBtn');
+  const loadTemplateBtn = document.getElementById('loadTemplateBtn');
   
   // Store the parsed data for editing
   let tableData = {
@@ -32,6 +34,9 @@ function initBulkEmailTab() {
   
   // Store current filters
   let currentFilters = {};
+  
+  // Store checkbox states for each record
+  let checkboxStates = {};
   
   // Store active filter element to restore focus
   let activeFilterElement = null;
@@ -104,6 +109,12 @@ function initBulkEmailTab() {
     
     // Store original records for filtering
     originalRecords = [...parsedData.records];
+    
+    // Initialize checkbox states for all records (default to checked)
+    checkboxStates = {};
+    originalRecords.forEach((_, index) => {
+      checkboxStates[index] = true;
+    });
     
     // Reset filters
     currentFilters = {};
@@ -197,6 +208,9 @@ function initBulkEmailTab() {
     // Start with all original records
     let filteredRecords = [...originalRecords];
     
+    // Save current checkbox states before filtering
+    saveCheckboxStates();
+    
     // Apply each filter
     Object.keys(currentFilters).forEach(header => {
       const filterValue = currentFilters[header].toLowerCase();
@@ -244,6 +258,12 @@ function initBulkEmailTab() {
       const checkboxes = document.querySelectorAll('.row-checkbox');
       checkboxes.forEach(checkbox => {
         checkbox.checked = selectAllCheckbox.checked;
+        
+        // Update stored checkbox states
+        const originalIndex = parseInt(checkbox.dataset.originalIndex);
+        if (originalIndex !== -1) {
+          checkboxStates[originalIndex] = selectAllCheckbox.checked;
+        }
       });
     });
     
@@ -422,9 +442,27 @@ function initBulkEmailTab() {
       const checkboxCell = document.createElement('td');
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.checked = true;
+      
+      // Get the original index of this record in the originalRecords array
+      const originalIndex = originalRecords.findIndex(r => r === record);
+      
+      // Set checkbox state from stored states or default to true
+      checkbox.checked = originalIndex !== -1 ? 
+        (checkboxStates[originalIndex] !== undefined ? checkboxStates[originalIndex] : true) : 
+        true;
+      
       checkbox.className = 'row-checkbox';
       checkbox.dataset.index = rowIndex;
+      checkbox.dataset.originalIndex = originalIndex;
+      
+      // Add event listener to update checkbox state when changed
+      checkbox.addEventListener('change', function() {
+        const origIndex = parseInt(this.dataset.originalIndex);
+        if (origIndex !== -1) {
+          checkboxStates[origIndex] = this.checked;
+        }
+      });
+      
       checkboxCell.appendChild(checkbox);
       row.appendChild(checkboxCell);
       
@@ -457,6 +495,17 @@ function initBulkEmailTab() {
       row.appendChild(previewCell);
       
       previewTable.appendChild(row);
+    });
+  }
+  
+  // Function to save current checkbox states
+  function saveCheckboxStates() {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(checkbox => {
+      const originalIndex = parseInt(checkbox.dataset.originalIndex);
+      if (originalIndex !== -1) {
+        checkboxStates[originalIndex] = checkbox.checked;
+      }
     });
   }
   
@@ -910,6 +959,21 @@ function initBulkEmailTab() {
   
   // The Data Sets Manager functionality has been moved to data-sets-manager.js
   
+  // Initialize the Email Templates Manager
+  window.EmailTemplatesManager.init({
+    saveTemplateBtn: saveTemplateBtn,
+    loadTemplateBtn: loadTemplateBtn,
+    getSubject: function() { return bulkSubjectInput.value; },
+    getBody: function() { return bulkBodyInput.value || bulkBodyEditor.innerHTML; },
+    setSubject: function(subject) { bulkSubjectInput.value = subject; },
+    setBody: function(body) {
+      // Set the body content in both the hidden textarea and the editor
+      bulkBodyInput.value = body;
+      bulkBodyEditor.innerHTML = body;
+      // Save the updated content
+      saveBulkData();
+    }
+  });
 }
 
 // Export functions
