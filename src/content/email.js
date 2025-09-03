@@ -20,7 +20,7 @@ async function sendEmail(data) {
     }
 
     // Click the New Message button
-    const newMessageButton = await waitForElement('button[aria-label="New message"], button[aria-label="New mail"]');
+    const newMessageButton = await waitForElement('button[aria-label="New message"], button[aria-label="New mail"], button[aria-label="New email"]');
     newMessageButton.click();
 
     // Wait for compose form to appear
